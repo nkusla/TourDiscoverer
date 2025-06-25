@@ -1,0 +1,11 @@
+services:
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    image: td-api-gateway
+    container_name: td-api-gateway
+    environment:
+      - PORT=${API_GATEWAY_PORT}
+    ports:
+      - "${API_GATEWAY_PORT}:${API_GATEWAY_PORT}"
