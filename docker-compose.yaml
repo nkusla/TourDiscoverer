@@ -7,5 +7,19 @@ services:
     container_name: td-api-gateway
     environment:
       - PORT=${API_GATEWAY_PORT}
+      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL}
+      - JWT_SECRET=${JWT_SECRET}
     ports:
       - "${API_GATEWAY_PORT}:${API_GATEWAY_PORT}"
+
+  auth-service:
+    build:
+      context: ./auth
+      dockerfile: Dockerfile
+    image: td-auth-service
+    container_name: td-auth-service
+    environment:
+      - PORT=${AUTH_SERVICE_PORT}
+      - JWT_SECRET=${JWT_SECRET}
+    ports:
+      - "${AUTH_SERVICE_PORT}:${AUTH_SERVICE_PORT}"
