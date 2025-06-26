@@ -96,5 +96,5 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 func (h *AuthHandler) Ping(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("pong"))
+	json.NewEncoder(w).Encode(PingResponse{Message: "pong", Service: "Auth Service"})
 }

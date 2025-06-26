@@ -7,6 +7,7 @@ import (
 type User struct {
 	Username string `json:"username" gorm:"primaryKey"`
 	Password string `json:"-" gorm:"not null"` // "-" excludes from JSON
+	Mail     string `json:"mail" gorm:"not null;unique"`
 	Role     string `json:"role" gorm:"not null;default:'tourist'"`
 	IsBanned bool   `json:"is_banned" gorm:"default:false"`
 }
@@ -20,6 +21,11 @@ type RegisterRequest struct {
 type LoginRequest struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
+}
+
+type PingResponse struct {
+	Message string `json:"message"`
+	Service string `json:"service"`
 }
 
 type JWTResponse struct {
