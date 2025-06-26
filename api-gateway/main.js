@@ -1,7 +1,7 @@
 const express = require('express');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const morgan = require('morgan');
-const { validateJWT, verifyUserExists } = require('./AuthMiddleware');
+const { validateJWT, verifyUserExists } = require('./middleware');
 
 const dotenv = require('dotenv');
 dotenv.config();
