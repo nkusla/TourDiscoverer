@@ -18,6 +18,7 @@ func main() {
 
 	r.HandleFunc("/register", handler.Register).Methods(http.MethodPost)
 	r.HandleFunc("/login", handler.Login).Methods(http.MethodPost)
+	r.HandleFunc("/users", handler.GetAll).Methods(http.MethodGet)
 	r.HandleFunc("/ping", handler.Ping).Methods(http.MethodGet)
 
 	port := os.Getenv("PORT")

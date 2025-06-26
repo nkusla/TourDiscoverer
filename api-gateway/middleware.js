@@ -1,7 +1,6 @@
 const jwt = require('jsonwebtoken');
 const axios = require('axios');
-
-const JWT_SECRET = process.env.JWT_SECRET || 'your_secret_key';
+const { JWT_SECRET, AUTH_SERVICE_URL } = require('./constants');
 
 function validateJWT(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -30,6 +29,42 @@ function validateJWT(req, res, next) {
   }
 }
 
+function validateJWTWithRole(requiredRole) {
+  return (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      return res.status(401).json({ message: 'Missing Authorization header' });
+    }
+
+    const token = authHeader.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ message: 'Token missing' });
+    }
+
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET);
+
+      if (!decoded.username || !decoded.role) {
+        return res.status(403).json({
+          message: 'Invalid token: missing required fields (username and role)'
+        });
+      }
+
+      // Check if user has required role
+      if (decoded.role !== requiredRole) {
+        return res.status(403).json({
+          message: `Access denied. Required role: ${requiredRole}`
+        });
+      }
+
+      req.user = decoded;
+      next();
+    } catch (err) {
+      return res.status(403).json({ message: 'Invalid or expired token' });
+    }
+  };
+}
+
 async function verifyUserExists(req, res, next) {
   const username = req.user?.username;
   if (!username) {
@@ -48,3 +83,9 @@ async function verifyUserExists(req, res, next) {
     return res.status(403).json({ message: 'User verification failed', error: err.message });
   }
 }
+
+module.exports = {
+  validateJWT,
+  validateJWTWithRole,
+  verifyUserExists
+};

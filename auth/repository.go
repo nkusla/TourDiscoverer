@@ -38,3 +38,12 @@ func (r *UserRepository) FindByUsername(username string) (*User, error) {
 
 	return &user, nil
 }
+
+func (r *UserRepository) FindAll() ([]*User, error) {
+	var users []*User
+	err := r.database.Find(&users).Error
+	if err != nil {
+		return nil, err
+	}
+	return users, nil
+}
