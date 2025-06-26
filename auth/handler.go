@@ -71,8 +71,8 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if loginReq.Username == "" || loginReq.Password == "" {
-		http.Error(w, "Username and password are required", http.StatusBadRequest)
+	if err := validate.Struct(loginReq); err != nil {
+		http.Error(w, "Validation error: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
