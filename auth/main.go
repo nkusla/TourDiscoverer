@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -11,8 +10,11 @@ import (
 
 func main() {
 	r := mux.NewRouter().StrictSlash(true)
+	database := InitDB()
+	SeedDB(database)
 
-	handler := &AuthHandler{}
+	repository := &UserRepository{database: database}
+	handler := &AuthHandler{repository: repository}
 
 	r.HandleFunc("/register", handler.Register).Methods(http.MethodPost)
 	r.HandleFunc("/login", handler.Login).Methods(http.MethodPost)
@@ -23,6 +25,6 @@ func main() {
 		port = "8080"
 	}
 
-	fmt.Printf("Auth service starting on port %s\n", port)
+	log.Printf("Auth service starting on port %s\n", port)
 	log.Fatal(http.ListenAndServe(":"+port, r))
 }

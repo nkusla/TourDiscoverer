@@ -1,6 +1,15 @@
 package main
 
-import "github.com/golang-jwt/jwt/v5"
+import (
+	"github.com/golang-jwt/jwt/v5"
+)
+
+type User struct {
+	Username string `json:"username" gorm:"primaryKey"`
+	Password string `json:"-" gorm:"not null"` // "-" excludes from JSON
+	Role     string `json:"role" gorm:"not null;default:'tourist'"`
+	IsBanned bool   `json:"is_banned" gorm:"default:false"`
+}
 
 type RegisterRequest struct {
 	Username string `json:"username"`
