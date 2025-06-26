@@ -47,16 +47,19 @@ func SeedDB(db *gorm.DB) {
 		{
 			Username: "admin123",
 			Password: hashPassword("admin123"),
+			Email:    "admin123@gmail.com",
 			Role:     "admin",
 		},
 		{
 			Username: "tourist123",
 			Password: hashPassword("tourist123"),
+			Email:    "tourist123@gmail.com",
 			Role:     "tourist",
 		},
 		{
 			Username: "guide123",
 			Password: hashPassword("guide123"),
+			Email:    "guide123@gmail.com",
 			Role:     "guide",
 		},
 	}

@@ -7,20 +7,21 @@ import (
 type User struct {
 	Username string `json:"username" gorm:"primaryKey"`
 	Password string `json:"-" gorm:"not null"` // "-" excludes from JSON
-	Mail     string `json:"mail" gorm:"not null;unique"`
+	Email    string `json:"email" gorm:"not null;unique"`
 	Role     string `json:"role" gorm:"not null;default:'tourist'"`
 	IsBanned bool   `json:"is_banned" gorm:"default:false"`
 }
 
 type RegisterRequest struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-	Role     string `json:"role"`
+	Username string `json:"username" validate:"required"`
+	Password string `json:"password" validate:"required"`
+	Email    string `json:"email" validate:"required,email"`
+	Role     string `json:"role" validate:"required"`
 }
 
 type LoginRequest struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Username string `json:"username" validate:"required"`
+	Password string `json:"password" validate:"required"`
 }
 
 type PingResponse struct {

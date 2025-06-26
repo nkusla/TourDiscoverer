@@ -4,12 +4,15 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/go-playground/validator/v10"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthHandler struct {
 	repository *UserRepository
 }
+
+var validate = validator.New()
 
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -24,13 +27,9 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if registerReq.Username == "" || registerReq.Password == "" {
-		http.Error(w, "Username and password are required", http.StatusBadRequest)
+	if err := validate.Struct(registerReq); err != nil {
+		http.Error(w, "Validation error: "+err.Error(), http.StatusBadRequest)
 		return
-	}
-
-	if registerReq.Role == "" {
-		registerReq.Role = "tourist"
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(registerReq.Password), bcrypt.DefaultCost)
@@ -42,12 +41,17 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	user := User{
 		Username: registerReq.Username,
 		Password: string(hashedPassword),
+		Email:    registerReq.Email,
 		Role:     registerReq.Role,
 	}
 
 	err = h.repository.Create(&user)
 	if err != nil {
-		http.Error(w, "Error creating user", http.StatusInternalServerError)
+		if err == ErrUserAlreadyExists {
+			http.Error(w, err.Error(), http.StatusConflict)
+		} else {
+			http.Error(w, "Error creating user", http.StatusInternalServerError)
+		}
 		return
 	}
 
