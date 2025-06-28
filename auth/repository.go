@@ -10,19 +10,16 @@ type UserRepository struct {
 	database *gorm.DB
 }
 
-var ErrUserAlreadyExists = errors.New("User with given username already exists")
+var ErrUserAlreadyExists = errors.New("User with this username or email already exists")
 
 func (r *UserRepository) Create(user *User) error {
-	// Check if user already exists
-	var existingUser User
-	err := r.database.Where("username = ?", user.Username).First(&existingUser).Error
+	err := r.database.Create(user).Error
 
-	if err == nil {
+	if err != nil {
 		return ErrUserAlreadyExists
 	}
 
-	// User doesn't exist, create it
-	return r.database.Create(user).Error
+	return nil
 }
 
 func (r *UserRepository) Update(user *User) error {
