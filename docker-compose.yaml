@@ -37,6 +37,7 @@ services:
     environment:
       - PORT=${AUTH_SERVICE_PORT}
       - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRATION=${JWT_EXPIRATION}
       - AUTH_DB_HOST=${AUTH_DB_HOST}
       - AUTH_DB_USER=${AUTH_DB_USER}
       - AUTH_DB_PASSWORD=${AUTH_DB_PASSWORD}

@@ -38,3 +38,15 @@ type Claims struct {
 	Role     string `json:"role"`
 	jwt.RegisteredClaims
 }
+
+const (
+	RoleTourist = "tourist"
+	RoleGuide   = "guide"
+	RoleAdmin   = "admin"
+)
+
+var UserRoles = []string{
+	RoleTourist,
+	RoleGuide,
+	RoleAdmin,
+}

@@ -38,6 +38,11 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if registerReq.Role != RoleGuide && registerReq.Role != RoleTourist {
+		http.Error(w, "Invalid role", http.StatusBadRequest)
+		return
+	}
+
 	user := User{
 		Username: registerReq.Username,
 		Password: string(hashedPassword),
