@@ -2,60 +2,44 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/go-playground/validator/v10"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthHandler struct {
-	repository *UserRepository
+	service *UserService
 }
 
 var validate = validator.New()
 
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
 	var registerReq RegisterRequest
 	err := json.NewDecoder(r.Body).Decode(&registerReq)
 	if err != nil {
-		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		http.Error(w, "invalid JSON", http.StatusBadRequest)
 		return
 	}
 
 	if err := validate.Struct(registerReq); err != nil {
-		http.Error(w, "Validation error: "+err.Error(), http.StatusBadRequest)
+		http.Error(w, "validation error: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(registerReq.Password), bcrypt.DefaultCost)
+	err = h.service.RegisterUser(registerReq)
 	if err != nil {
-		http.Error(w, "Error processing password", http.StatusInternalServerError)
-		return
-	}
-
-	if registerReq.Role != RoleGuide && registerReq.Role != RoleTourist {
-		http.Error(w, "Invalid role", http.StatusBadRequest)
-		return
-	}
-
-	user := User{
-		Username: registerReq.Username,
-		Password: string(hashedPassword),
-		Email:    registerReq.Email,
-		Role:     registerReq.Role,
-	}
-
-	err = h.repository.Create(&user)
-	if err != nil {
-		if err == ErrUserAlreadyExists {
+		if errors.Is(err, ErrUserAlreadyExists) {
 			http.Error(w, err.Error(), http.StatusConflict)
+		} else if errors.Is(err, ErrInvalidRole) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
 		} else {
-			http.Error(w, "Error creating user", http.StatusInternalServerError)
+			http.Error(w, "error registering user: "+err.Error(), http.StatusInternalServerError)
 		}
 		return
 	}
@@ -65,37 +49,29 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
 	var loginReq LoginRequest
 	err := json.NewDecoder(r.Body).Decode(&loginReq)
 	if err != nil {
-		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		http.Error(w, "invalid JSON", http.StatusBadRequest)
 		return
 	}
 
 	if err := validate.Struct(loginReq); err != nil {
-		http.Error(w, "Validation error: "+err.Error(), http.StatusBadRequest)
+		http.Error(w, "validation error: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	user, err := h.repository.FindByUsername(loginReq.Username)
+	tokenString, err := h.service.AuthenticateUser(loginReq.Username, loginReq.Password)
 	if err != nil {
-		http.Error(w, "Username or password is incorrect", http.StatusUnauthorized)
-		return
-	}
-
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(loginReq.Password))
-	if err != nil {
-		http.Error(w, "Username or password is incorrect", http.StatusUnauthorized)
-		return
-	}
-
-	tokenString, err := CreateJWT(user.Username, user.Role)
-	if err != nil {
-		http.Error(w, "Error creating token", http.StatusInternalServerError)
+		if errors.Is(err, ErrInvalidCredentials) {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+		} else {
+			http.Error(w, "error authenticating user: "+err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 
@@ -105,13 +81,13 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 func (h *AuthHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	users, err := h.repository.FindAll()
+	users, err := h.service.GetAllUsers()
 	if err != nil {
-		http.Error(w, "Error retrieving users", http.StatusInternalServerError)
+		http.Error(w, "error retrieving users", http.StatusInternalServerError)
 		return
 	}
 

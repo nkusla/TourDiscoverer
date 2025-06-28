@@ -10,7 +10,7 @@ type UserRepository struct {
 	database *gorm.DB
 }
 
-var ErrUserAlreadyExists = errors.New("User with this username or email already exists")
+var ErrUserAlreadyExists = errors.New("user with this username or email already exists")
 
 func (r *UserRepository) Create(user *User) error {
 	err := r.database.Create(user).Error

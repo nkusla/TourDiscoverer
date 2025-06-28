@@ -14,7 +14,8 @@ func main() {
 	SeedDB(database)
 
 	repository := &UserRepository{database: database}
-	handler := &AuthHandler{repository: repository}
+	service := &UserService{repository: repository}
+	handler := &AuthHandler{service: service}
 
 	r.HandleFunc("/register", handler.Register).Methods(http.MethodPost)
 	r.HandleFunc("/login", handler.Login).Methods(http.MethodPost)
