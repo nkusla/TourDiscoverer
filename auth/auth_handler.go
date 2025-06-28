@@ -76,6 +76,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(JWTResponse{Token: tokenString})
 }
 
@@ -92,11 +93,12 @@ func (h *AuthHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(users)
 }
 
 func (h *AuthHandler) Ping(w http.ResponseWriter, _ *http.Request) {
-	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(PingResponse{Message: "pong", Service: "Auth Service"})
 }
