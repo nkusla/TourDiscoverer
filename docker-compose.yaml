@@ -7,7 +7,7 @@ services:
     container_name: td-api-gateway
     environment:
       - PORT=${API_GATEWAY_PORT}
-      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL}
+      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL}:${AUTH_SERVICE_PORT}
       - JWT_SECRET=${JWT_SECRET}
     ports:
       - "${API_GATEWAY_PORT}:${API_GATEWAY_PORT}"
@@ -43,7 +43,5 @@ services:
       - AUTH_DB_PASSWORD=${AUTH_DB_PASSWORD}
       - AUTH_DB_NAME=${AUTH_DB_NAME}
       - AUTH_DB_PORT=${AUTH_DB_PORT}
-    ports:
-      - "${AUTH_SERVICE_PORT}:${AUTH_SERVICE_PORT}"
     depends_on:
       - auth-db
