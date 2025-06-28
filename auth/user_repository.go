@@ -1,7 +1,7 @@
 package main
 
 import (
-	"errors"
+	"strings"
 
 	"gorm.io/gorm"
 )
@@ -10,13 +10,17 @@ type UserRepository struct {
 	database *gorm.DB
 }
 
-var ErrUserAlreadyExists = errors.New("user with this username or email already exists")
-
 func (r *UserRepository) Create(user *User) error {
 	err := r.database.Create(user).Error
 
 	if err != nil {
-		return ErrUserAlreadyExists
+		errMsg := err.Error()
+
+		if strings.Contains(errMsg, UserUsernamePrimaryKey) {
+			return ErrUsernameAlreadyExists
+		} else if strings.Contains(errMsg, UserEmailUniqueIndex) {
+			return ErrEmailAlreadyExists
+		}
 	}
 
 	return nil

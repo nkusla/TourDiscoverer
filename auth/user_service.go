@@ -1,19 +1,12 @@
 package main
 
 import (
-	"errors"
-
 	"golang.org/x/crypto/bcrypt"
 )
 
 type UserService struct {
 	repository *UserRepository
 }
-
-var (
-	ErrInvalidRole        = errors.New("invalid role")
-	ErrInvalidCredentials = errors.New("incorrect username or password")
-)
 
 func (s *UserService) RegisterUser(req RegisterRequest) error {
 	if req.Role != RoleGuide && req.Role != RoleTourist {

@@ -34,7 +34,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 	err = h.service.RegisterUser(registerReq)
 	if err != nil {
-		if errors.Is(err, ErrUserAlreadyExists) {
+		if errors.Is(err, ErrUsernameAlreadyExists) || errors.Is(err, ErrEmailAlreadyExists) {
 			http.Error(w, err.Error(), http.StatusConflict)
 		} else if errors.Is(err, ErrInvalidRole) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -97,5 +97,6 @@ func (h *AuthHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 
 func (h *AuthHandler) Ping(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(PingResponse{Message: "pong", Service: "Auth Service"})
 }
