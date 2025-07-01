@@ -39,6 +39,10 @@ func (s *UserService) AuthenticateUser(username, password string) (string, error
 		return "", ErrInvalidCredentials
 	}
 
+	if user.IsBanned {
+		return "", ErrUserBanned
+	}
+
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 	if err != nil {
 		return "", ErrInvalidCredentials
@@ -58,4 +62,34 @@ func (s *UserService) GetAllUsers() ([]*User, error) {
 		return nil, err
 	}
 	return users, nil
+}
+
+func (s *UserService) BlockUser(username string) error {
+	user, err := s.repository.FindByUsername(username)
+	if err != nil {
+		return ErrUserNotFound
+	}
+
+	user.IsBanned = true
+	err = s.repository.Update(user)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *UserService) UnblockUser(username string) error {
+	user, err := s.repository.FindByUsername(username)
+	if err != nil {
+		return ErrUserNotFound
+	}
+
+	user.IsBanned = false
+	err = s.repository.Update(user)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

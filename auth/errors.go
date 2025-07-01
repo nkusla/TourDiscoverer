@@ -5,6 +5,8 @@ import "errors"
 var (
 	ErrInvalidRole        = errors.New("invalid role")
 	ErrInvalidCredentials = errors.New("incorrect username or password")
+	ErrUserNotFound       = errors.New("user not found")
+	ErrUserBanned         = errors.New("user is banned")
 )
 
 var (

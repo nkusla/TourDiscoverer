@@ -20,3 +20,7 @@ type PingResponse struct {
 type JWTResponse struct {
 	Token string `json:"token"`
 }
+
+type BlockUserRequest struct {
+	Username string `json:"username" validate:"required"`
+}
