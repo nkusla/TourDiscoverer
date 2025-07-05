@@ -12,19 +12,19 @@ api.use(morgan('dev'));
 
 // AUTH SERVICE PROXIES
 
-// api.use('/api/auth/users', validateJWTWithRole(USER_ROLES.ADMIN), createProxyMiddleware({
-//   target: AUTH_SERVICE_URL,
-//   changeOrigin: true,
-//   pathRewrite: {
-//     '^/api/auth': '',
-//   }
-// }));
-
-api.use('/api/admin/auth', validateJWTWithRole(USER_ROLES.ADMIN), createProxyMiddleware({
+api.get('/api/auth/users', validateJWTWithRole(USER_ROLES.ADMIN), createProxyMiddleware({
   target: AUTH_SERVICE_URL,
   changeOrigin: true,
   pathRewrite: {
-    '^/api/admin/auth': '',
+    '^/api/auth': '',
+  }
+}));
+
+api.post('/api/auth/block', validateJWTWithRole(USER_ROLES.ADMIN), createProxyMiddleware({
+  target: AUTH_SERVICE_URL,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api/auth': '',
   }
 }));
 

@@ -122,38 +122,7 @@ func (h *AuthHandler) BlockUser(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, ErrUserNotFound) {
 			http.Error(w, err.Error(), http.StatusNotFound)
 		} else {
-			http.Error(w, "error blocking user: "+err.Error(), http.StatusInternalServerError)
-		}
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-}
-
-func (h *AuthHandler) UnblockUser(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	var blockReq BlockUserRequest
-	err := json.NewDecoder(r.Body).Decode(&blockReq)
-	if err != nil {
-		http.Error(w, "invalid JSON", http.StatusBadRequest)
-		return
-	}
-
-	if err := validate.Struct(blockReq); err != nil {
-		http.Error(w, "validation error: "+err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	err = h.service.UnblockUser(blockReq.Username)
-	if err != nil {
-		if errors.Is(err, ErrUserNotFound) {
-			http.Error(w, err.Error(), http.StatusNotFound)
-		} else {
-			http.Error(w, "error unblocking user: "+err.Error(), http.StatusInternalServerError)
+			http.Error(w, "error toggling user block status: "+err.Error(), http.StatusInternalServerError)
 		}
 		return
 	}

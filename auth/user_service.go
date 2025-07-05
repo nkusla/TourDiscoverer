@@ -70,22 +70,7 @@ func (s *UserService) BlockUser(username string) error {
 		return ErrUserNotFound
 	}
 
-	user.IsBanned = true
-	err = s.repository.Update(user)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (s *UserService) UnblockUser(username string) error {
-	user, err := s.repository.FindByUsername(username)
-	if err != nil {
-		return ErrUserNotFound
-	}
-
-	user.IsBanned = false
+	user.IsBanned = !user.IsBanned
 	err = s.repository.Update(user)
 	if err != nil {
 		return err
