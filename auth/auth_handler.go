@@ -69,6 +69,8 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if errors.Is(err, ErrInvalidCredentials) {
 			http.Error(w, err.Error(), http.StatusUnauthorized)
+		} else if errors.Is(err, ErrUserBanned) {
+			http.Error(w, err.Error(), http.StatusForbidden)
 		} else {
 			http.Error(w, "error authenticating user: "+err.Error(), http.StatusInternalServerError)
 		}
@@ -95,6 +97,37 @@ func (h *AuthHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(users)
+}
+
+func (h *AuthHandler) BlockUser(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var blockReq BlockUserRequest
+	err := json.NewDecoder(r.Body).Decode(&blockReq)
+	if err != nil {
+		http.Error(w, "invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	if err := validate.Struct(blockReq); err != nil {
+		http.Error(w, "validation error: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err = h.service.BlockUser(blockReq.Username)
+	if err != nil {
+		if errors.Is(err, ErrUserNotFound) {
+			http.Error(w, err.Error(), http.StatusNotFound)
+		} else {
+			http.Error(w, "error toggling user block status: "+err.Error(), http.StatusInternalServerError)
+		}
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func (h *AuthHandler) Ping(w http.ResponseWriter, _ *http.Request) {

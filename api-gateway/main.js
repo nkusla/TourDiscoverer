@@ -20,6 +20,14 @@ api.get('/api/auth/users', validateJWTWithRole(USER_ROLES.ADMIN), createProxyMid
   }
 }));
 
+api.post('/api/auth/block', validateJWTWithRole(USER_ROLES.ADMIN), createProxyMiddleware({
+  target: AUTH_SERVICE_URL,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api/auth': '',
+  }
+}));
+
 api.use('/api/auth', createProxyMiddleware({
   target: AUTH_SERVICE_URL,
   changeOrigin: true,
