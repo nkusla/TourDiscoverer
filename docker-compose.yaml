@@ -1,5 +1,6 @@
 services:
   api-gateway:
+    profiles: ["service"]
     build:
       context: ./api-gateway
       dockerfile: Dockerfile
@@ -13,6 +14,7 @@ services:
       - "${API_GATEWAY_PORT}:${API_GATEWAY_PORT}"
 
   auth-db:
+    profiles: ["db"]
     image: postgres:16-alpine
     container_name: td-auth-db
     environment:
@@ -28,7 +30,27 @@ services:
       timeout: 5s
       retries: 5
 
+  follower-db:
+    profiles: ["db"]
+    image: neo4j:5.26-community
+    container_name: td-follower-db
+    environment:
+      - NEO4J_AUTH=${FOLLOWER_DB_USER}/${FOLLOWER_DB_PASSWORD}
+      - NEO4J_dbms_default__database=${FOLLOWER_DB_NAME}
+      #- NEO4J_dbms_connector_http_enabled=false  # Disable HTTP browser
+      #- NEO4J_dbms_connector_https_enabled=false # Disable HTTPS browser
+    ports:
+      - "7474:7474"                                # HTTP port (for Neo4j Browser)
+      - "${FOLLOWER_DB_PORT}:${FOLLOWER_DB_PORT}"   # Bolt port
+    healthcheck:
+      test: ["CMD-SHELL", "cypher-shell -u ${FOLLOWER_DB_USER} -p ${FOLLOWER_DB_PASSWORD} 'RETURN 1'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
   auth-service:
+    profiles: ["service"]
     build:
       context: ./auth
       dockerfile: Dockerfile
@@ -43,5 +65,13 @@ services:
       - AUTH_DB_PASSWORD=${AUTH_DB_PASSWORD}
       - AUTH_DB_NAME=${AUTH_DB_NAME}
       - AUTH_DB_PORT=${AUTH_DB_PORT}
-    depends_on:
-      - auth-db
+
+  follower-service:
+    profiles: ["service"]
+    build:
+      context: ./follower
+      dockerfile: Dockerfile
+    image: td-follower-service
+    container_name: td-follower-service
+    environment:
+      - PORT=${FOLLOWER_SERVICE_PORT}
