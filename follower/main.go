@@ -14,6 +14,7 @@ func main() {
 	if err := InitDatabase(); err != nil {
 		log.Fatal("Failed to initialize database:", err)
 	}
+	SeedDatabase()
 	defer CloseDatabase()
 
 	repository := &FollowerRepository{driver: &Driver}
