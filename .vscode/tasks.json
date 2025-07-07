@@ -1,0 +1,53 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Docker: Build and Run Databases",
+			"type": "shell",
+			"command": "docker-compose",
+			"args": [
+				"--profile",
+				"db",
+				"up",
+				"--build",
+				"-d"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Docker: Stop Databases",
+			"type": "shell",
+			"command": "docker-compose",
+			"args": [
+				"--profile",
+				"db",
+				"down"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Docker: Build and Run Services",
+			"type": "shell",
+			"command": "docker-compose",
+			"args": [
+				"--profile",
+				"service",
+				"up",
+				"--build",
+				"-d"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Docker: Stop Services",
+			"type": "shell",
+			"command": "docker-compose",
+			"args": [
+				"--profile",
+				"service",
+				"down"
+			],
+			"problemMatcher": []
+		}
+	]
+}
