@@ -21,3 +21,12 @@ func (s *FollowerService) FollowUser(follower string, followee string) error {
 
 	return nil
 }
+
+func (s *FollowerService) UnfollowUser(follower string, followee string) error {
+	err := s.repository.DeleteFollowRelationship(follower, followee)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

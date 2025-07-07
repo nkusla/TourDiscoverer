@@ -22,6 +22,7 @@ func main() {
 	handler := &FollowerHandler{service: service}
 
 	r.HandleFunc("/follow", handler.CreateFollowRelationship).Methods(http.MethodPost)
+	r.HandleFunc("/unfollow", handler.DeleteFollowRelationship).Methods(http.MethodDelete)
 
 	r.HandleFunc("/internal/user", handler.CreateUser).Methods(http.MethodPost)
 	r.HandleFunc("/internal/ping", handler.Ping).Methods(http.MethodGet)

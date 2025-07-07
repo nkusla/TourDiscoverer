@@ -55,3 +55,27 @@ func (r *FollowerRepository) CreateFollowRelationship(follower string, followee 
 
 	return err
 }
+
+func (r *FollowerRepository) DeleteFollowRelationship(follower string, followee string) error {
+	ctx := context.Background()
+	session := r.db.Driver.NewSession(ctx, neo4j.SessionConfig{
+		AccessMode: neo4j.AccessModeWrite,
+	})
+
+	defer session.Close(ctx)
+
+	_, err := session.ExecuteWrite(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
+		query := `
+						MATCH (f:User {username: $follower})-[r:FOLLOWS]->(t:User {username: $followee})
+						DELETE r
+				`
+		params := map[string]any{"follower": follower, "followee": followee}
+		result, err := tx.Run(ctx, query, params)
+		if err != nil {
+			return nil, err
+		}
+		return result.Consume(ctx)
+	})
+
+	return err
+}

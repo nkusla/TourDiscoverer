@@ -57,6 +57,28 @@ func (h *FollowerHandler) CreateFollowRelationship(w http.ResponseWriter, r *htt
 	w.WriteHeader(http.StatusCreated)
 }
 
+func (h *FollowerHandler) DeleteFollowRelationship(w http.ResponseWriter, r *http.Request) {
+	var request UnfollowUserRequest
+
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if err := validate.Struct(request); err != nil {
+		http.Error(w, "validation error: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err := h.service.UnfollowUser(request.Follower, request.Followee)
+	if err != nil {
+		http.Error(w, "error deleting follow relationship: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (h *FollowerHandler) Ping(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
