@@ -41,7 +41,7 @@ services:
       #- NEO4J_dbms_connector_https_enabled=false # Disable HTTPS browser
     ports:
       - "7474:7474"                                 # HTTP port (for Neo4j Browser)
-      - "${FOLLOWER_DB_PORT}:${FOLLOWER_DB_PORT}"   # Bolt port
+      - "${FOLLOWER_DB_PORT}:7687"                  # Bolt port
     healthcheck:
       test: ["CMD-SHELL", "cypher-shell -u ${FOLLOWER_DB_USER} -p ${FOLLOWER_DB_PASSWORD} 'RETURN 1'"]
       interval: 10s
@@ -65,6 +65,8 @@ services:
       - AUTH_DB_PASSWORD=${AUTH_DB_PASSWORD}
       - AUTH_DB_NAME=${AUTH_DB_NAME}
       - AUTH_DB_PORT=${AUTH_DB_PORT}
+    ports:
+      - "${AUTH_SERVICE_PORT}:${AUTH_SERVICE_PORT}"
 
   follower-service:
     profiles: ["service"]
