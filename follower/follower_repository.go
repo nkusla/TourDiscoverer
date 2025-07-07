@@ -7,19 +7,19 @@ import (
 )
 
 type FollowerRepository struct {
-	driver *neo4j.DriverWithContext
+	db *Database
 }
 
 func (r *FollowerRepository) CreateUser(username string) error {
 	ctx := context.Background()
-	session := (*r.driver).NewSession(ctx, neo4j.SessionConfig{
+	session := r.db.Driver.NewSession(ctx, neo4j.SessionConfig{
 		AccessMode: neo4j.AccessModeWrite,
 	})
 
 	defer session.Close(ctx)
 
 	_, err := session.ExecuteWrite(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
-		query := "CREATE (u:User {username: $username})"
+		query := "MERGE (u:User {username: $username})"
 		params := map[string]any{"username": username}
 		result, err := tx.Run(ctx, query, params)
 		if err != nil {
@@ -33,14 +33,18 @@ func (r *FollowerRepository) CreateUser(username string) error {
 
 func (r *FollowerRepository) CreateFollowRelationship(follower string, followee string) error {
 	ctx := context.Background()
-	session := (*r.driver).NewSession(ctx, neo4j.SessionConfig{
+	session := r.db.Driver.NewSession(ctx, neo4j.SessionConfig{
 		AccessMode: neo4j.AccessModeWrite,
 	})
 
 	defer session.Close(ctx)
 
 	_, err := session.ExecuteWrite(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
-		query := "MATCH (f:User {username: $follower}), (t:User {username: $followee}) CREATE (f)-[:FOLLOWS]->(t)"
+		query := `
+            MERGE (f:User {username: $follower})
+            MERGE (t:User {username: $followee})
+            MERGE (f)-[:FOLLOWS]->(t)
+        `
 		params := map[string]any{"follower": follower, "followee": followee}
 		result, err := tx.Run(ctx, query, params)
 		if err != nil {

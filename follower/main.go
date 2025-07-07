@@ -11,13 +11,13 @@ import (
 func main() {
 	r := mux.NewRouter().StrictSlash(true)
 
-	if err := InitDatabase(); err != nil {
+	database := &Database{}
+	if err := database.InitDatabase(); err != nil {
 		log.Fatal("Failed to initialize database:", err)
 	}
-	SeedDatabase()
-	defer CloseDatabase()
+	defer database.CloseDatabase()
 
-	repository := &FollowerRepository{driver: &Driver}
+	repository := &FollowerRepository{db: database}
 	service := &FollowerService{repository: repository}
 	handler := &FollowerHandler{service: service}
 
