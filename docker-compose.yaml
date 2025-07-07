@@ -80,3 +80,17 @@ services:
       - FOLLOWER_DB_PASSWORD=${FOLLOWER_DB_PASSWORD}
     ports:
       - "${FOLLOWER_SERVICE_PORT}:${FOLLOWER_SERVICE_PORT}"
+
+  seed:
+    profiles: ["service"]
+    build:
+      context: ./seed
+      dockerfile: Dockerfile
+    image: td-seed
+    container_name: td-seed
+    environment:
+      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL}:${AUTH_SERVICE_PORT}
+      - FOLLOWER_SERVICE_URL=${FOLLOWER_SERVICE_URL}:${FOLLOWER_SERVICE_PORT}
+    depends_on:
+      - auth-service
+      - follower-service
