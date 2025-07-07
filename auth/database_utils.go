@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-func InitDB() *gorm.DB {
+func InitDatabase() *gorm.DB {
 	host := os.Getenv("AUTH_DB_HOST")
 	port := os.Getenv("AUTH_DB_PORT")
 	user := os.Getenv("AUTH_DB_USER")
@@ -33,43 +33,31 @@ func InitDB() *gorm.DB {
 	return db
 }
 
-func SeedDB(db *gorm.DB) {
+func SeedAdmins(db *gorm.DB) {
 	// Check if data already exists
 	var count int64
-	db.Model(&User{}).Count(&count)
+	db.Model(&User{}).Where("role = ?", RoleAdmin).Count(&count)
 	if count > 0 {
-		log.Println("Test data already exists, skipping seed")
+		log.Println("Admin data already exists, skipping seed")
 		return
 	}
 
-	// Create test users
-	testUsers := []User{
+	// Create admin users
+	adminUsers := []User{
 		{
 			Username: "admin123",
 			Password: hashPassword("admin123"),
 			Email:    "admin123@gmail.com",
 			Role:     RoleAdmin,
 		},
-		{
-			Username: "tourist123",
-			Password: hashPassword("tourist123"),
-			Email:    "tourist123@gmail.com",
-			Role:     RoleTourist,
-		},
-		{
-			Username: "guide123",
-			Password: hashPassword("guide123"),
-			Email:    "guide123@gmail.com",
-			Role:     RoleGuide,
-		},
 	}
 
-	for _, user := range testUsers {
+	for _, user := range adminUsers {
 		result := db.Create(&user)
 		if result.Error != nil {
-			log.Printf("Error creating test user %s: %v", user.Username, result.Error)
+			log.Printf("Error creating admin user %s: %v", user.Username, result.Error)
 		} else {
-			log.Printf("Created test user: %s", user.Username)
+			log.Printf("Created admin user: %s", user.Username)
 		}
 	}
 }

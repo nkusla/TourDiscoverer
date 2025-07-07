@@ -10,8 +10,8 @@ import (
 
 func main() {
 	r := mux.NewRouter().StrictSlash(true)
-	database := InitDB()
-	SeedDB(database)
+	database := InitDatabase()
+	SeedAdmins(database)
 
 	repository := &UserRepository{database: database}
 	service := &UserService{repository: repository}
@@ -20,8 +20,9 @@ func main() {
 	r.HandleFunc("/register", handler.Register).Methods(http.MethodPost)
 	r.HandleFunc("/login", handler.Login).Methods(http.MethodPost)
 	r.HandleFunc("/users", handler.GetAll).Methods(http.MethodGet)
-	r.HandleFunc("/ping", handler.Ping).Methods(http.MethodGet)
 	r.HandleFunc("/block", handler.BlockUser).Methods(http.MethodPost)
+
+	r.HandleFunc("/internal/ping", handler.Ping).Methods(http.MethodGet)
 
 	port := os.Getenv("PORT")
 	if port == "" {

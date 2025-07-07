@@ -23,7 +23,8 @@ func main() {
 
 	r.HandleFunc("/user", handler.CreateUser).Methods(http.MethodPost)
 	r.HandleFunc("/follow", handler.CreateFollowRelationship).Methods(http.MethodPost)
-	r.HandleFunc("/ping", handler.Ping).Methods(http.MethodGet)
+
+	r.HandleFunc("/internal/ping", handler.Ping).Methods(http.MethodGet)
 
 	port := os.Getenv("PORT")
 	if port == "" {
