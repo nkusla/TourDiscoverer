@@ -1,6 +1,13 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"log"
+	"net/http"
+	"os"
+
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -28,6 +35,44 @@ func (s *UserService) RegisterUser(req RegisterRequest) error {
 	err = s.repository.Create(user)
 	if err != nil {
 		return err
+	}
+
+	err = s.registerUserInFollowerService(user.Username)
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+
+	return nil
+}
+
+func (s *UserService) registerUserInFollowerService(username string) error {
+	followerServiceURL := os.Getenv("FOLLOWER_SERVICE_URL")
+	if followerServiceURL == "" {
+		return fmt.Errorf("follower service URL is not configured")
+	}
+
+	payload := map[string]string{
+		"username": username,
+	}
+
+	jsonData, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	resp, err := http.Post(
+		followerServiceURL+"/internal/user",
+		"application/json",
+		bytes.NewBuffer(jsonData),
+	)
+
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated {
+		return fmt.Errorf("failed to register user in follower service, status code: %d", resp.StatusCode)
 	}
 
 	return nil

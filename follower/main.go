@@ -21,9 +21,9 @@ func main() {
 	service := &FollowerService{repository: repository}
 	handler := &FollowerHandler{service: service}
 
-	r.HandleFunc("/user", handler.CreateUser).Methods(http.MethodPost)
 	r.HandleFunc("/follow", handler.CreateFollowRelationship).Methods(http.MethodPost)
 
+	r.HandleFunc("/internal/user", handler.CreateUser).Methods(http.MethodPost)
 	r.HandleFunc("/internal/ping", handler.Ping).Methods(http.MethodGet)
 
 	port := os.Getenv("PORT")
