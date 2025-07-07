@@ -4,8 +4,9 @@
 		{
 			"label": "Docker: Build and Run Databases",
 			"type": "shell",
-			"command": "docker-compose",
+			"command": "docker",
 			"args": [
+				"compose",
 				"--profile",
 				"db",
 				"up",
@@ -17,8 +18,9 @@
 		{
 			"label": "Docker: Stop Databases",
 			"type": "shell",
-			"command": "docker-compose",
+			"command": "docker",
 			"args": [
+				"compose",
 				"--profile",
 				"db",
 				"down"
@@ -28,8 +30,9 @@
 		{
 			"label": "Docker: Build and Run Services",
 			"type": "shell",
-			"command": "docker-compose",
+			"command": "docker",
 			"args": [
+				"compose",
 				"--profile",
 				"service",
 				"up",
@@ -41,8 +44,9 @@
 		{
 			"label": "Docker: Stop Services",
 			"type": "shell",
-			"command": "docker-compose",
+			"command": "docker",
 			"args": [
+				"compose",
 				"--profile",
 				"service",
 				"down"
