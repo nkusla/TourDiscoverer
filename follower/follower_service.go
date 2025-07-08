@@ -48,3 +48,12 @@ func (s *FollowerService) GetFollowing(username string) ([]User, error) {
 
 	return following, nil
 }
+
+func (s *FollowerService) IsFollowing(follower string, followee string) (bool, error) {
+	isFollowing, err := s.repository.IsFollowing(follower, followee)
+	if err != nil {
+		return false, err
+	}
+
+	return isFollowing, nil
+}

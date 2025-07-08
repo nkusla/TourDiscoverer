@@ -145,3 +145,36 @@ func (r *FollowerRepository) GetFollowing(username string) ([]User, error) {
 
 	return following, err
 }
+
+func (r *FollowerRepository) IsFollowing(follower string, followee string) (bool, error) {
+	ctx := context.Background()
+	session := r.db.Driver.NewSession(ctx, neo4j.SessionConfig{
+		AccessMode: neo4j.AccessModeRead,
+	})
+
+	defer session.Close(ctx)
+
+	var exists bool
+
+	_, err := session.ExecuteRead(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
+		query := `
+            MATCH (f:User {username: $follower})-[:FOLLOWS]->(t:User {username: $followee})
+            RETURN COUNT(*) > 0 AS exists
+        `
+		params := map[string]any{"follower": follower, "followee": followee}
+		result, err := tx.Run(ctx, query, params)
+		if err != nil {
+			return nil, err
+		}
+
+		if result.Next(ctx) {
+			record := result.Record()
+			existsValue, _ := record.Get("exists")
+			exists = existsValue.(bool)
+		}
+
+		return nil, result.Err()
+	})
+
+	return exists, err
+}

@@ -23,8 +23,10 @@ func main() {
 
 	r.HandleFunc("/follow", handler.CreateFollowRelationship).Methods(http.MethodPost)
 	r.HandleFunc("/unfollow", handler.DeleteFollowRelationship).Methods(http.MethodDelete)
-	r.HandleFunc("/followers/{username}", handler.GetFollowers).Methods(http.MethodGet)
-	r.HandleFunc("/following/{username}", handler.GetFollowing).Methods(http.MethodGet)
+
+	r.HandleFunc("/user/{username}/followers", handler.GetFollowers).Methods(http.MethodGet)
+	r.HandleFunc("/user/{username}/following", handler.GetFollowing).Methods(http.MethodGet)
+	r.HandleFunc("/user/{follower}/following/{followee}", handler.IsFollowing).Methods(http.MethodGet)
 
 	r.HandleFunc("/internal/user", handler.CreateUser).Methods(http.MethodPost)
 	r.HandleFunc("/internal/ping", handler.Ping).Methods(http.MethodGet)

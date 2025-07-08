@@ -116,6 +116,29 @@ func (h *FollowerHandler) GetFollowing(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(following)
 }
 
+func (h *FollowerHandler) IsFollowing(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	follower := vars["follower"]
+	followee := vars["followee"]
+
+	if follower == "" || followee == "" {
+		http.Error(w, "follower and followee parameters are required", http.StatusBadRequest)
+		return
+	}
+
+	isFollowing, err := h.service.IsFollowing(follower, followee)
+	if err != nil {
+		http.Error(w, "error checking following status: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if isFollowing {
+		w.WriteHeader(http.StatusOK)
+	} else {
+		w.WriteHeader(http.StatusNotFound)
+	}
+}
+
 func (h *FollowerHandler) Ping(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
