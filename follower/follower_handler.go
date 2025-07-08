@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/go-playground/validator"
+	"github.com/gorilla/mux"
 )
 
 type FollowerHandler struct {
@@ -77,6 +78,42 @@ func (h *FollowerHandler) DeleteFollowRelationship(w http.ResponseWriter, r *htt
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *FollowerHandler) GetFollowers(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	username := vars["username"]
+	if username == "" {
+		http.Error(w, "username query parameter is required", http.StatusBadRequest)
+		return
+	}
+
+	followers, err := h.service.GetFollowers(username)
+	if err != nil {
+		http.Error(w, "error retrieving followers: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(followers)
+}
+
+func (h *FollowerHandler) GetFollowing(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	username := vars["username"]
+	if username == "" {
+		http.Error(w, "username query parameter is required", http.StatusBadRequest)
+		return
+	}
+
+	following, err := h.service.GetFollowing(username)
+	if err != nil {
+		http.Error(w, "error retrieving following: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(following)
 }
 
 func (h *FollowerHandler) Ping(w http.ResponseWriter, _ *http.Request) {

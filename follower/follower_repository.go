@@ -79,3 +79,69 @@ func (r *FollowerRepository) DeleteFollowRelationship(follower string, followee 
 
 	return err
 }
+
+func (r *FollowerRepository) GetFollowers(username string) ([]User, error) {
+	ctx := context.Background()
+	session := r.db.Driver.NewSession(ctx, neo4j.SessionConfig{
+		AccessMode: neo4j.AccessModeRead,
+	})
+
+	defer session.Close(ctx)
+
+	followers := []User{}
+
+	_, err := session.ExecuteRead(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
+		query := `
+			MATCH (u:User {username: $username})<-[:FOLLOWS]-(f:User)
+			RETURN f.username AS follower
+    `
+		params := map[string]any{"username": username}
+		result, err := tx.Run(ctx, query, params)
+		if err != nil {
+			return nil, err
+		}
+
+		for result.Next(ctx) {
+			record := result.Record()
+			followerUsername, _ := record.Get("follower")
+			followers = append(followers, User{Username: followerUsername.(string)})
+		}
+
+		return nil, result.Err()
+	})
+
+	return followers, err
+}
+
+func (r *FollowerRepository) GetFollowing(username string) ([]User, error) {
+	ctx := context.Background()
+	session := r.db.Driver.NewSession(ctx, neo4j.SessionConfig{
+		AccessMode: neo4j.AccessModeRead,
+	})
+
+	defer session.Close(ctx)
+
+	var following []User
+
+	_, err := session.ExecuteRead(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
+		query := `
+			MATCH (u:User {username: $username})-[:FOLLOWS]->(f:User)
+			RETURN f.username AS followee
+		`
+		params := map[string]any{"username": username}
+		result, err := tx.Run(ctx, query, params)
+		if err != nil {
+			return nil, err
+		}
+
+		for result.Next(ctx) {
+			record := result.Record()
+			followeeUsername, _ := record.Get("followee")
+			following = append(following, User{Username: followeeUsername.(string)})
+		}
+
+		return nil, result.Err()
+	})
+
+	return following, err
+}

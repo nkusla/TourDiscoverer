@@ -30,3 +30,21 @@ func (s *FollowerService) UnfollowUser(follower string, followee string) error {
 
 	return nil
 }
+
+func (s *FollowerService) GetFollowers(username string) ([]User, error) {
+	followers, err := s.repository.GetFollowers(username)
+	if err != nil {
+		return nil, err
+	}
+
+	return followers, nil
+}
+
+func (s *FollowerService) GetFollowing(username string) ([]User, error) {
+	following, err := s.repository.GetFollowing(username)
+	if err != nil {
+		return nil, err
+	}
+
+	return following, nil
+}
