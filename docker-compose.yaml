@@ -56,7 +56,10 @@ services:
     ports:
       - "27017:27017"
     environment:
-      - MONGO_INITDB_DATABASE=blog_db
+      - MONGO_INITDB_DATABASE=${BLOG_DB_NAME}
+      - MONGO_INITDB_ROOT_USERNAME=${BLOG_DB_USER}
+      - MONGO_INITDB_ROOT_PASSWORD=${BLOG_DB_PASSWORD}
+      
 
   auth-service:
     profiles: ["service"]
@@ -115,7 +118,10 @@ services:
     image: td-blog-service
     container_name: td-blog-service
     environment:
-      - PORT=3002
-      - BLOG_DB_URL=mongodb://blog-db:27017
+      - PORT=${BLOG_SERVICE_PORT}
+      - BLOG_DB_NAME=${BLOG_DB_NAME}
+      - BLOG_DB_USER=${BLOG_DB_USER}
+      - BLOG_DB_PASSWORD=${BLOG_DB_PASSWORD}
+      - BLOG_DB_PORT=${BLOG_DB_PORT}
     ports:
-      - "3002:3002"
+      - "${BLOG_SERVICE_PORT}:${BLOG_SERVICE_PORT}"

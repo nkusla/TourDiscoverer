@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -10,11 +11,12 @@ import (
 )
 
 func main() {
-	mongoURL := os.Getenv("BLOG_DB_URL")
-	if mongoURL == "" {
-		mongoURL = "mongodb://blog-db:27017"
-	}
-	client, err := mongo.Connect(nil, options.Client().ApplyURI(mongoURL))
+	dbPort := os.Getenv("BLOG_DB_PORT")
+	dbUsername := os.Getenv("BLOG_DB_USER")
+	dbPassword := os.Getenv("BLOG_DB_PASSWORD")
+	dbName := os.Getenv("BLOG_DB_NAME")
+	url := fmt.Sprintf("mongodb://%s:%s@blog-db:%s/%s?authSource=admin", dbUsername, dbPassword, dbPort, dbName)
+	client, err := mongo.Connect(nil, options.Client().ApplyURI(url))
 	if err != nil {
 		log.Fatal(err)
 	}
