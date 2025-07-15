@@ -119,5 +119,3 @@ services:
       - BLOG_DB_URL=mongodb://blog-db:27017
     ports:
       - "3002:3002"
-    depends_on:
-      - blog-db
