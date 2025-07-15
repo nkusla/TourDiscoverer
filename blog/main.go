@@ -25,6 +25,15 @@ func main() {
 
 	http.HandleFunc("/blog", handler.CreateBlog)
 	http.HandleFunc("/blogs", handler.GetAllBlogs)
+
+	commentCollection := client.Database("blog_db").Collection("comments")
+	commentRepo := &CommentRepository{collection: commentCollection}
+	commentService := &CommentService{repository: commentRepo}
+	commentHandler := &CommentHandler{service: commentService}
+
+	http.HandleFunc("/comment", commentHandler.CreateComment)
+	http.HandleFunc("/comments", commentHandler.GetComments)
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "3002"
