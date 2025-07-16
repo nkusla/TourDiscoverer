@@ -35,7 +35,6 @@ func InitDatabase() *gorm.DB {
 }
 
 func SeedTour(db *gorm.DB) {
-	// Check if data already exists
 	var count int64
 	db.Model(&Tour{}).Count(&count)
 	if count > 0 {
@@ -43,16 +42,15 @@ func SeedTour(db *gorm.DB) {
 		return
 	}
 
-	// Create sample tours
 	sampleTours := []Tour{
 		{
-			Name:        "Belgrade City Tour",
-			Description: "Explore the beautiful capital of Serbia",
-			Difficulty:  DifficultyEasy,
-			Tags:        "city,culture,history",
-			Status:      TourStatusDraft,
-			Price:       0,
-			AuthorID:    1, // Assuming author with ID 1 exists
+			Name:           "Belgrade City Tour",
+			Description:    "Explore the beautiful capital of Serbia",
+			Difficulty:     DifficultyEasy,
+			Tags:           "city,culture,history",
+			Status:         TourStatusDraft,
+			Price:          0,
+			AuthorUsername: "admin123",
 			KeyPoints: []KeyPoint{
 				{
 					Name:        "Kalemegdan Fortress",
@@ -73,13 +71,13 @@ func SeedTour(db *gorm.DB) {
 			},
 		},
 		{
-			Name:        "Novi Sad Adventure",
-			Description: "Discover the cultural capital of Vojvodina",
-			Difficulty:  DifficultyMedium,
-			Tags:        "culture,fortress,danube",
-			Status:      TourStatusDraft,
-			Price:       0,
-			AuthorID:    1,
+			Name:           "Novi Sad Adventure",
+			Description:    "Discover the cultural capital of Vojvodina",
+			Difficulty:     DifficultyMedium,
+			Tags:           "culture,fortress,danube",
+			Status:         TourStatusDraft,
+			Price:          0,
+			AuthorUsername: "admin123",
 			KeyPoints: []KeyPoint{
 				{
 					Name:        "Petrovaradin Fortress",

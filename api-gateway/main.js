@@ -2,7 +2,7 @@ const express = require('express');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const morgan = require('morgan');
 const { validateJWT, validateJWTWithRole, verifyUserExists } = require('./middleware');
-const { AUTH_SERVICE_URL, USER_ROLES } = require('./constants');
+const { AUTH_SERVICE_URL, TOUR_SERVICE_URL, USER_ROLES } = require('./constants');
 
 const dotenv = require('dotenv');
 dotenv.config();
@@ -33,6 +33,16 @@ api.use('/api/auth', createProxyMiddleware({
   changeOrigin: true,
   pathRewrite: {
     '^/api/auth': '', // Remove /api/auth prefix when forwarding
+  },
+}));
+
+// TOUR SERVICE PROXIES
+
+api.use('/api/tours', validateJWT, createProxyMiddleware({
+  target: TOUR_SERVICE_URL,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api/tours': '', // Rewrite /api/tours to /tours
   },
 }));
 

@@ -13,13 +13,14 @@ func main() {
 	database := InitDatabase()
 	SeedTour(database)
 
-	// repository := &TourRepository{database: database}
-	// service := &TourService{repository: repository}
-	handler := &TourHandler{}
+	repository := &TourRepository{database: database}
+	service := &TourService{repository: repository}
+	handler := &TourHandler{service: service}
 
-	r.HandleFunc("/createTour", handler.CreateTour).Methods(http.MethodPost)
+	r.HandleFunc("/create", handler.CreateTour).Methods(http.MethodPost)
+	r.HandleFunc("/my", handler.GetMyTours).Methods(http.MethodGet)
+	r.HandleFunc("/{id}", handler.GetTourByID).Methods(http.MethodGet)
 	r.HandleFunc("/ping", handler.Ping).Methods(http.MethodGet)
-
 
 	port := os.Getenv("PORT")
 	if port == "" {

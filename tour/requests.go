@@ -1,0 +1,35 @@
+package main
+
+type CreateTourRequest struct {
+	Name        string `json:"name" validate:"required"`
+	Description string `json:"description"`
+	Difficulty  string `json:"difficulty" validate:"required,oneof=easy medium hard"`
+	Tags        string `json:"tags"`
+}
+
+type CreateTourResponse struct {
+	ID          uint   `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Difficulty  string `json:"difficulty"`
+	Tags        string `json:"tags"`
+	Status      string `json:"status"`
+	Price       float64 `json:"price"`
+	AuthorUsername string `json:"author_username"`
+	Message     string `json:"message"`
+}
+
+type GetToursResponse struct {
+	Tours []Tour `json:"tours"`
+	Count int    `json:"count"`
+}
+
+type ErrorResponse struct {
+	Error   string `json:"error"`
+	Message string `json:"message"`
+}
+
+type PingResponse struct {
+	Message string `json:"message"`
+	Service string `json:"service"`
+}

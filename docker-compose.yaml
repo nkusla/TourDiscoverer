@@ -9,6 +9,7 @@ services:
     environment:
       - PORT=${API_GATEWAY_PORT}
       - AUTH_SERVICE_URL=${AUTH_SERVICE_URL}:${AUTH_SERVICE_PORT}
+      - TOUR_SERVICE_URL=${TOUR_SERVICE_URL}:${TOUR_SERVICE_PORT}
       - JWT_SECRET=${JWT_SECRET}
     ports:
       - "${API_GATEWAY_PORT}:${API_GATEWAY_PORT}"
