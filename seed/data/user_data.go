@@ -1,4 +1,4 @@
-package main
+package data
 
 const (
 	RoleTourist = "tourist"
@@ -6,7 +6,7 @@ const (
 	RoleAdmin   = "admin"
 )
 
-var users = []map[string]interface{}{
+var Users = []map[string]interface{}{
 	{
 		"username": "tourist1",
 		"password": "tourist1",
@@ -42,28 +42,5 @@ var users = []map[string]interface{}{
 		"password": "guide3",
 		"email":    "guide3@gmail.com",
 		"role":     RoleGuide,
-	},
-}
-
-var followers = []map[string]interface{}{
-	{
-		"follower": "tourist1",
-		"followee": "guide1",
-	},
-	{
-		"follower": "guide1",
-		"followee": "tourist1",
-	},
-	{
-		"follower": "guide2",
-		"followee": "tourist1",
-	},
-	{
-		"follower": "guide2",
-		"followee": "tourist2",
-	},
-	{
-		"follower": "guide2",
-		"followee": "tourist3",
 	},
 }

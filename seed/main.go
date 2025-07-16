@@ -1,12 +1,15 @@
 package main
 
-import "log"
+import (
+	"log"
+	"seed/seeder"
+)
 
 func main() {
 	log.Println("Seeding the database...")
 
-	seeder := NewSeederService()
-	seeder.SeedAll()
+	seederManager := seeder.NewSeederManager()
+	seederManager.SeedAll()
 
 	log.Println("Database seeding completed successfully.")
 }
