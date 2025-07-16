@@ -30,6 +30,23 @@ services:
       timeout: 5s
       retries: 5
 
+  tour-db:
+    profiles: ["db"]
+    image: postgres:16-alpine
+    container_name: td-tour-db
+    environment:
+      - POSTGRES_HOST=${TOUR_DB_HOST}
+      - POSTGRES_USER=${TOUR_DB_USER}
+      - POSTGRES_PASSWORD=${TOUR_DB_PASSWORD}
+      - POSTGRES_DB=${TOUR_DB_NAME}
+    ports:
+      - "${TOUR_DB_PORT}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${TOUR_DB_USER} -d ${TOUR_DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   follower-db:
     profiles: ["db"]
     image: neo4j:5.26-community
@@ -83,6 +100,26 @@ services:
       - FOLLOWER_DB_PASSWORD=${FOLLOWER_DB_PASSWORD}
     ports:
       - "${FOLLOWER_SERVICE_PORT}:${FOLLOWER_SERVICE_PORT}"
+
+  tour-service:
+    profiles: ["service"]
+    build:
+      context: ./tour
+      dockerfile: Dockerfile
+    image: td-tour-service
+    container_name: td-tour-service
+    environment:
+      - PORT=${TOUR_SERVICE_PORT}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRATION=${JWT_EXPIRATION}
+      - TOUR_DB_HOST=${TOUR_DB_HOST}
+      - TOUR_DB_USER=${TOUR_DB_USER}
+      - TOUR_DB_PASSWORD=${TOUR_DB_PASSWORD}
+      - TOUR_DB_NAME=${TOUR_DB_NAME}
+      - TOUR_DB_PORT=${TOUR_DB_PORT}
+    ports:
+      - "${TOUR_SERVICE_PORT}:${TOUR_SERVICE_PORT}"
+
 
   seed:
     profiles: ["service"]

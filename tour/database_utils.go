@@ -12,8 +12,8 @@ import (
 )
 
 func InitDatabase() *gorm.DB {
-	host := os.Getenv("TOUR_DB_HOST")
-	port := os.Getenv("TOUR_DB_PORT")
+	host := os.Getenv("TOUR_DB_HOST") // Use container name for internal Docker networking
+	port := "5432"       // Use internal Docker port
 	user := os.Getenv("TOUR_DB_USER")
 	password := os.Getenv("TOUR_DB_PASSWORD")
 	dbname := os.Getenv("TOUR_DB_NAME")
