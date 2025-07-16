@@ -5,7 +5,6 @@ import (
 	"log"
 	"os"
 
-	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -13,7 +12,7 @@ import (
 
 func InitDatabase() *gorm.DB {
 	host := os.Getenv("TOUR_DB_HOST") // Use container name for internal Docker networking
-	port := "5432"       // Use internal Docker port
+	port := "5432"                    // Use internal Docker port
 	user := os.Getenv("TOUR_DB_USER")
 	password := os.Getenv("TOUR_DB_PASSWORD")
 	dbname := os.Getenv("TOUR_DB_NAME")
@@ -99,13 +98,4 @@ func SeedTour(db *gorm.DB) {
 			log.Printf("Created tour: %s with %d key points", tour.Name, len(tour.KeyPoints))
 		}
 	}
-}
-
-func hashPassword(password string) string {
-	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		log.Fatalf("Error hashing password: %v", err)
-	}
-
-	return string(hash)
 }

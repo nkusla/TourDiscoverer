@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 )
 
@@ -43,6 +44,35 @@ func (service *TourService) GetToursByAuthor(authorUsername string) ([]Tour, err
 
 func (service *TourService) GetTourByID(id uint) (*Tour, error) {
 	return service.repository.GetTourByID(id)
+}
+
+func (service *TourService) CreateKeyPoint(request *CreateKeyPointRequest, tourID uint, authorUsername string) (*KeyPoint, error) {
+	// Check if tour exists and belongs to the author
+	tour, err := service.repository.GetTourByID(tourID)
+	if err != nil {
+		return nil, err
+	}
+
+	if tour.AuthorUsername != authorUsername {
+		return nil, fmt.Errorf("you can only add key points to your own tours")
+	}
+
+	keyPoint := &KeyPoint{
+		TourID:      tourID,
+		Name:        request.Name,
+		Description: request.Description,
+		Latitude:    request.Latitude,
+		Longitude:   request.Longitude,
+		ImageURL:    request.ImageURL,
+		Order:       request.Order,
+	}
+
+	err = service.repository.CreateKeyPoint(keyPoint)
+	if err != nil {
+		return nil, err
+	}
+
+	return keyPoint, nil
 }
 
 func isValidDifficulty(difficulty string) bool {

@@ -19,8 +19,9 @@ func main() {
 
 	r.HandleFunc("/create", handler.CreateTour).Methods(http.MethodPost)
 	r.HandleFunc("/my", handler.GetMyTours).Methods(http.MethodGet)
-	r.HandleFunc("/{id}", handler.GetTourByID).Methods(http.MethodGet)
 	r.HandleFunc("/ping", handler.Ping).Methods(http.MethodGet)
+	r.HandleFunc("/keypoints/create", handler.CreateKeyPoint).Methods(http.MethodPost)
+	//r.HandleFunc("/{id}", handler.GetTourByID).Methods(http.MethodGet)
 
 	port := os.Getenv("PORT")
 	if port == "" {

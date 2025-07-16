@@ -42,7 +42,7 @@ api.use('/api/tours', validateJWT, createProxyMiddleware({
   target: TOUR_SERVICE_URL,
   changeOrigin: true,
   pathRewrite: {
-    '^/api/tours': '', // Rewrite /api/tours to /tours
+    '^/api/tours': '', 
   },
 }));
 

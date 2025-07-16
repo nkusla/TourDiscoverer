@@ -27,7 +27,24 @@ func (h *TourHandler) CreateTour(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	authorUsername := "admin123"
+	// Get username and role from JWT token
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" {
+		h.sendErrorResponse(w, "Missing Authorization header", http.StatusUnauthorized)
+		return
+	}
+
+	authorUsername, role, err := GetUserInfoFromJWT(authHeader)
+	if err != nil {
+		h.sendErrorResponse(w, "Invalid token: "+err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	// Check if user is a guide (author)
+	if role != RoleGuide {
+		h.sendErrorResponse(w, "Only guides can create tours", http.StatusForbidden)
+		return
+	}
 
 	tour, err := h.service.CreateTour(&request, authorUsername)
 	if err != nil {
@@ -53,7 +70,24 @@ func (h *TourHandler) CreateTour(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *TourHandler) GetMyTours(w http.ResponseWriter, r *http.Request) {
-	authorUsername := "admin123"
+	// Get username and role from JWT token
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" {
+		h.sendErrorResponse(w, "Missing Authorization header", http.StatusUnauthorized)
+		return
+	}
+
+	authorUsername, role, err := GetUserInfoFromJWT(authHeader)
+	if err != nil {
+		h.sendErrorResponse(w, "Invalid token: "+err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	// Check if user is a guide (author)
+	if role != RoleGuide {
+		h.sendErrorResponse(w, "Only guides can access their tours", http.StatusForbidden)
+		return
+	}
 
 	tours, err := h.service.GetToursByAuthor(authorUsername)
 	if err != nil {
@@ -74,7 +108,7 @@ func (h *TourHandler) GetMyTours(w http.ResponseWriter, r *http.Request) {
 func (h *TourHandler) GetTourByID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	idStr := vars["id"]
-	
+
 	id, err := strconv.ParseUint(idStr, 10, 32)
 	if err != nil {
 		h.sendErrorResponse(w, "Invalid tour ID", http.StatusBadRequest)
@@ -90,6 +124,72 @@ func (h *TourHandler) GetTourByID(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(tour)
+}
+
+func (h *TourHandler) CreateKeyPoint(w http.ResponseWriter, r *http.Request) {
+	var request CreateKeyPointRequest
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		h.sendErrorResponse(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if err := validate.Struct(&request); err != nil {
+		h.sendErrorResponse(w, "Validation failed: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Get username and role from JWT token
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" {
+		h.sendErrorResponse(w, "Missing Authorization header", http.StatusUnauthorized)
+		return
+	}
+
+	authorUsername, role, err := GetUserInfoFromJWT(authHeader)
+	if err != nil {
+		h.sendErrorResponse(w, "Invalid token: "+err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	// Check if user is a guide (author)
+	if role != RoleGuide {
+		h.sendErrorResponse(w, "Only guides can create key points", http.StatusForbidden)
+		return
+	}
+
+	// Check if the tour exists and if the user is the author of the tour
+	tour, err := h.service.GetTourByID(request.TourID)
+	if err != nil {
+		h.sendErrorResponse(w, "Tour not found", http.StatusNotFound)
+		return
+	}
+
+	if tour.AuthorUsername != authorUsername {
+		h.sendErrorResponse(w, "You can only add key points to your own tours", http.StatusForbidden)
+		return
+	}
+
+	keyPoint, err := h.service.CreateKeyPoint(&request, request.TourID, authorUsername)
+	if err != nil {
+		h.sendErrorResponse(w, "Failed to create key point: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	response := CreateKeyPointResponse{
+		ID:          keyPoint.ID,
+		TourID:      keyPoint.TourID,
+		Name:        keyPoint.Name,
+		Description: keyPoint.Description,
+		Latitude:    keyPoint.Latitude,
+		Longitude:   keyPoint.Longitude,
+		ImageURL:    keyPoint.ImageURL,
+		Order:       keyPoint.Order,
+		Message:     "Key point created successfully",
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(response)
 }
 
 func (h *TourHandler) Ping(w http.ResponseWriter, _ *http.Request) {

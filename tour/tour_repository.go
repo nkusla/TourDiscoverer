@@ -37,3 +37,8 @@ func (repo *TourRepository) DeleteTour(id uint) error {
 	result := repo.database.Delete(&Tour{}, id)
 	return result.Error
 }
+
+func (repo *TourRepository) CreateKeyPoint(keyPoint *KeyPoint) error {
+	result := repo.database.Create(keyPoint)
+	return result.Error
+}
