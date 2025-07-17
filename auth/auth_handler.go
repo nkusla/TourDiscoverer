@@ -15,11 +15,6 @@ type AuthHandler struct {
 var validate = validator.New()
 
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	var registerReq RegisterRequest
 	err := json.NewDecoder(r.Body).Decode(&registerReq)
 	if err != nil {
@@ -48,11 +43,6 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	var loginReq LoginRequest
 	err := json.NewDecoder(r.Body).Decode(&loginReq)
 	if err != nil {
@@ -83,8 +73,9 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AuthHandler) GetAll(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+	userRole := r.Header.Get("x-user-role")
+	if userRole != "admin" {
+		http.Error(w, "unauthorized: Only admins can view all users", http.StatusForbidden)
 		return
 	}
 
@@ -100,8 +91,9 @@ func (h *AuthHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AuthHandler) BlockUser(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+	userRole := r.Header.Get("x-user-role")
+	if userRole != "admin" {
+		http.Error(w, "unauthorized: Only admins can block users", http.StatusForbidden)
 		return
 	}
 

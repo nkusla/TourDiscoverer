@@ -84,7 +84,7 @@ func (s *UserService) AuthenticateUser(username, password string) (string, error
 		return "", ErrInvalidCredentials
 	}
 
-	if user.IsBanned {
+	if user.IsBlocked {
 		return "", ErrUserBanned
 	}
 
@@ -115,7 +115,7 @@ func (s *UserService) BlockUser(username string) error {
 		return ErrUserNotFound
 	}
 
-	user.IsBanned = !user.IsBanned
+	user.IsBlocked = !user.IsBlocked
 	err = s.repository.Update(user)
 	if err != nil {
 		return err

@@ -10,42 +10,34 @@ dotenv.config();
 const api = express();
 api.use(morgan('dev'));
 
-// AUTH SERVICE PROXIES
+const blockInternalRoutes = (req, res, next) => {
+  if (req.path.includes('/internal')) {
+    return res.status(403).json({
+      error: 'Forbidden',
+      message: 'Internal routes are not accessible externally'
+    });
+  }
+  next();
+};
 
-api.get('/api/auth/users', validateJWTWithRole(USER_ROLES.ADMIN), createProxyMiddleware({
+api.use(blockInternalRoutes);
+
+
+api.user('/api/auth', validateJWT, createProxyMiddleware({
   target: AUTH_SERVICE_URL,
   changeOrigin: true,
   pathRewrite: {
     '^/api/auth': '',
   }
 }));
-
-api.post('/api/auth/block', validateJWTWithRole(USER_ROLES.ADMIN), createProxyMiddleware({
-  target: AUTH_SERVICE_URL,
-  changeOrigin: true,
-  pathRewrite: {
-    '^/api/auth': '',
-  }
-}));
-
-api.use('/api/auth', createProxyMiddleware({
-  target: AUTH_SERVICE_URL,
-  changeOrigin: true,
-  pathRewrite: {
-    '^/api/auth': '', // Remove /api/auth prefix when forwarding
-  },
-}));
-
-// TOUR SERVICE PROXIES
 
 api.use('/api/tours', validateJWT, createProxyMiddleware({
   target: TOUR_SERVICE_URL,
   changeOrigin: true,
   pathRewrite: {
-    '^/api/tours': '', 
+    '^/api/tours': '',
   },
 }));
-
 
 api.get('/ping', (req, res) => {
   res.status(200).json({
