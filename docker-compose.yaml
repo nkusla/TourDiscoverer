@@ -6,10 +6,11 @@ services:
       dockerfile: Dockerfile
     image: td-api-gateway
     container_name: td-api-gateway
+    hostname: ${API_GATEWAY_HOST}
     environment:
       - PORT=${API_GATEWAY_PORT}
-      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL}:${AUTH_SERVICE_PORT}
-      - TOUR_SERVICE_URL=${TOUR_SERVICE_URL}:${TOUR_SERVICE_PORT}
+      - AUTH_SERVICE_URL=http://${AUTH_SERVICE_HOST}:${AUTH_SERVICE_PORT}
+      - TOUR_SERVICE_URL=http://${TOUR_SERVICE_HOST}:${TOUR_SERVICE_PORT}
       - JWT_SECRET=${JWT_SECRET}
     ports:
       - "${API_GATEWAY_PORT}:${API_GATEWAY_PORT}"
@@ -18,13 +19,13 @@ services:
     profiles: ["db"]
     image: postgres:16-alpine
     container_name: td-auth-db
+    hostname: ${AUTH_DB_HOST}
     environment:
-      - POSTGRES_HOST=${AUTH_DB_HOST}
+      - POSTGRES_DB=${AUTH_DB_NAME}
       - POSTGRES_USER=${AUTH_DB_USER}
       - POSTGRES_PASSWORD=${AUTH_DB_PASSWORD}
-      - POSTGRES_DB=${AUTH_DB_NAME}
     ports:
-      - "${AUTH_DB_PORT}:5432"
+      - "${AUTH_DB_EXT_PORT}:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${AUTH_DB_USER} -d ${AUTH_DB_NAME}"]
       interval: 5s
@@ -35,13 +36,13 @@ services:
     profiles: ["db"]
     image: postgres:16-alpine
     container_name: td-tour-db
+    hostname: ${TOUR_DB_HOST}
     environment:
-      - POSTGRES_HOST=${TOUR_DB_HOST}
+      - POSTGRES_DB=${TOUR_DB_NAME}
       - POSTGRES_USER=${TOUR_DB_USER}
       - POSTGRES_PASSWORD=${TOUR_DB_PASSWORD}
-      - POSTGRES_DB=${TOUR_DB_NAME}
     ports:
-      - "${TOUR_DB_PORT}:5432"
+      - "${TOUR_DB_EXT_PORT}:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${TOUR_DB_USER} -d ${TOUR_DB_NAME}"]
       interval: 5s
@@ -52,6 +53,7 @@ services:
     profiles: ["db"]
     image: neo4j:5.26-community
     container_name: td-follower-db
+    hostname: ${FOLLOWER_DB_HOST}
     environment:
       - NEO4J_AUTH=${FOLLOWER_DB_USER}/${FOLLOWER_DB_PASSWORD}
       - NEO4J_dbms_default__database=${FOLLOWER_DB_NAME}
@@ -59,7 +61,7 @@ services:
       #- NEO4J_dbms_connector_https_enabled=false # Disable HTTPS browser
     ports:
       - "7474:7474"                                 # HTTP port (for Neo4j Browser)
-      - "${FOLLOWER_DB_PORT}:7687"                  # Bolt port
+      - "${FOLLOWER_DB_EXT_PORT}:7687"              # Bolt port
     healthcheck:
       test: ["CMD-SHELL", "cypher-shell -u ${FOLLOWER_DB_USER} -p ${FOLLOWER_DB_PASSWORD} 'RETURN 1'"]
       interval: 10s
@@ -71,13 +73,13 @@ services:
     profiles: ["db"]
     image: mongo:7.0
     container_name: td-blog-db
-    ports:
-      - "27017:27017"
+    hostname: ${BLOG_DB_HOST}
     environment:
       - MONGO_INITDB_DATABASE=${BLOG_DB_NAME}
       - MONGO_INITDB_ROOT_USERNAME=${BLOG_DB_USER}
       - MONGO_INITDB_ROOT_PASSWORD=${BLOG_DB_PASSWORD}
-
+    ports:
+      - "${BLOG_DB_EXT_PORT}:27017"
 
   auth-service:
     profiles: ["service"]
@@ -86,16 +88,17 @@ services:
       dockerfile: Dockerfile
     image: td-auth-service
     container_name: td-auth-service
+    hostname: ${AUTH_SERVICE_HOST}
     environment:
       - PORT=${AUTH_SERVICE_PORT}
       - JWT_SECRET=${JWT_SECRET}
       - JWT_EXPIRATION=${JWT_EXPIRATION}
       - AUTH_DB_HOST=${AUTH_DB_HOST}
+      - AUTH_DB_PORT=5432
+      - AUTH_DB_NAME=${AUTH_DB_NAME}
       - AUTH_DB_USER=${AUTH_DB_USER}
       - AUTH_DB_PASSWORD=${AUTH_DB_PASSWORD}
-      - AUTH_DB_NAME=${AUTH_DB_NAME}
-      - AUTH_DB_PORT=${AUTH_DB_PORT}
-      - FOLLOWER_SERVICE_URL=${FOLLOWER_SERVICE_URL}:${FOLLOWER_SERVICE_PORT}
+      - FOLLOWER_SERVICE_URL=http://${FOLLOWER_SERVICE_HOST}:${FOLLOWER_SERVICE_PORT}
     ports:
       - "${AUTH_SERVICE_PORT}:${AUTH_SERVICE_PORT}"
 
@@ -106,9 +109,11 @@ services:
       dockerfile: Dockerfile
     image: td-follower-service
     container_name: td-follower-service
+    hostname: ${FOLLOWER_SERVICE_HOST}
     environment:
       - PORT=${FOLLOWER_SERVICE_PORT}
-      - FOLLOWER_DB_URL=${FOLLOWER_DB_URL}:${FOLLOWER_DB_PORT}
+      - FOLLOWER_DB_HOST=${FOLLOWER_DB_HOST}
+      - FOLLOWER_DB_PORT=7687
       - FOLLOWER_DB_USER=${FOLLOWER_DB_USER}
       - FOLLOWER_DB_PASSWORD=${FOLLOWER_DB_PASSWORD}
     ports:
@@ -126,12 +131,30 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - JWT_EXPIRATION=${JWT_EXPIRATION}
       - TOUR_DB_HOST=${TOUR_DB_HOST}
+      - TOUR_DB_PORT=5432
+      - TOUR_DB_NAME=${TOUR_DB_NAME}
       - TOUR_DB_USER=${TOUR_DB_USER}
       - TOUR_DB_PASSWORD=${TOUR_DB_PASSWORD}
-      - TOUR_DB_NAME=${TOUR_DB_NAME}
-      - TOUR_DB_PORT=${TOUR_DB_PORT}
     ports:
       - "${TOUR_SERVICE_PORT}:${TOUR_SERVICE_PORT}"
+
+  blog-service:
+    profiles: ["service"]
+    build:
+      context: ./blog
+      dockerfile: Dockerfile
+    image: td-blog-service
+    container_name: td-blog-service
+    hostname: ${BLOG_SERVICE_HOST}
+    environment:
+      - PORT=${BLOG_SERVICE_PORT}
+      - BLOG_DB_HOST=${BLOG_DB_HOST}
+      - BLOG_DB_PORT=27017
+      - BLOG_DB_NAME=${BLOG_DB_NAME}
+      - BLOG_DB_USER=${BLOG_DB_USER}
+      - BLOG_DB_PASSWORD=${BLOG_DB_PASSWORD}
+    ports:
+      - "${BLOG_SERVICE_PORT}:${BLOG_SERVICE_PORT}"
 
   seed:
     profiles: ["service"]
@@ -141,24 +164,8 @@ services:
     image: td-seed
     container_name: td-seed
     environment:
-      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL}:${AUTH_SERVICE_PORT}
-      - FOLLOWER_SERVICE_URL=${FOLLOWER_SERVICE_URL}:${FOLLOWER_SERVICE_PORT}
+      - AUTH_SERVICE_URL=http://${AUTH_SERVICE_HOST}:${AUTH_SERVICE_PORT}
+      - FOLLOWER_SERVICE_URL=http://${FOLLOWER_SERVICE_HOST}:${FOLLOWER_SERVICE_PORT}
     depends_on:
       - auth-service
       - follower-service
-
-  blog-service:
-    profiles: ["service"]
-    build:
-      context: ./blog
-      dockerfile: Dockerfile
-    image: td-blog-service
-    container_name: td-blog-service
-    environment:
-      - PORT=${BLOG_SERVICE_PORT}
-      - BLOG_DB_NAME=${BLOG_DB_NAME}
-      - BLOG_DB_USER=${BLOG_DB_USER}
-      - BLOG_DB_PASSWORD=${BLOG_DB_PASSWORD}
-      - BLOG_DB_PORT=${BLOG_DB_PORT}
-    ports:
-      - "${BLOG_SERVICE_PORT}:${BLOG_SERVICE_PORT}"

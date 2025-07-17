@@ -40,7 +40,7 @@ func (b *BaseSeeder) IsServiceReady() bool {
 	}
 
 	pingURL := b.serviceURL + "/internal/ping"
-	for i := 0; i < 15; i++ {
+	for i := 0; i < 45; i++ {
 		resp, err := b.client.Get(pingURL)
 		if err == nil && resp.StatusCode == http.StatusOK {
 			resp.Body.Close()

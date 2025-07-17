@@ -14,9 +14,11 @@ type Database struct {
 }
 
 func (db *Database) InitDatabase() error {
-	url := GetEnv("FOLLOWER_DB_URL", "bolt://localhost:7687")
+	protocol := "bolt://"
+	port := GetEnv("FOLLOWER_DB_PORT", "7687")
 	username := GetEnv("FOLLOWER_DB_USER", "neo4j")
 	password := GetEnv("FOLLOWER_DB_PASSWORD", "password")
+	url := protocol + GetEnv("FOLLOWER_DB_HOST", "localhost") + ":" + port
 
 	driver, err := neo4j.NewDriverWithContext(url, neo4j.BasicAuth(username, password, ""))
 	if err != nil {
