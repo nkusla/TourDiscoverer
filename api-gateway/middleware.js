@@ -22,6 +22,9 @@ function validateJWT(req, res, next) {
 			});
 		}
 
+    req.headers['x-user-role'] = decoded.role;
+    req.headers['x-username'] = decoded.username;
+
     req.user = decoded;
     next();
   } catch (err) {
@@ -56,6 +59,9 @@ function validateJWTWithRole(requiredRole) {
           message: `Access denied. Required role: ${requiredRole}`
         });
       }
+
+      req.headers['x-user-role'] = decoded.role;
+      req.headers['x-username'] = decoded.username;
 
       req.user = decoded;
       next();
