@@ -16,6 +16,9 @@ type TourHandler struct {
 var validate = validator.New()
 
 func (h *TourHandler) CreateTour(w http.ResponseWriter, r *http.Request) {
+	username := r.Header.Get("x-username")
+	userRole := r.Header.Get("x-user-role")
+
 	var request CreateTourRequest
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		h.sendErrorResponse(w, "Invalid request body", http.StatusBadRequest)
@@ -27,26 +30,13 @@ func (h *TourHandler) CreateTour(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get username and role from JWT token
-	authHeader := r.Header.Get("Authorization")
-	if authHeader == "" {
-		h.sendErrorResponse(w, "Missing Authorization header", http.StatusUnauthorized)
-		return
-	}
-
-	authorUsername, role, err := GetUserInfoFromJWT(authHeader)
-	if err != nil {
-		h.sendErrorResponse(w, "Invalid token: "+err.Error(), http.StatusUnauthorized)
-		return
-	}
-
 	// Check if user is a guide (author)
-	if role != RoleGuide {
+	if userRole != RoleGuide {
 		h.sendErrorResponse(w, "Only guides can create tours", http.StatusForbidden)
 		return
 	}
 
-	tour, err := h.service.CreateTour(&request, authorUsername)
+	tour, err := h.service.CreateTour(&request, username)
 	if err != nil {
 		h.sendErrorResponse(w, "Failed to create tour: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -70,26 +60,16 @@ func (h *TourHandler) CreateTour(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *TourHandler) GetMyTours(w http.ResponseWriter, r *http.Request) {
-	// Get username and role from JWT token
-	authHeader := r.Header.Get("Authorization")
-	if authHeader == "" {
-		h.sendErrorResponse(w, "Missing Authorization header", http.StatusUnauthorized)
-		return
-	}
-
-	authorUsername, role, err := GetUserInfoFromJWT(authHeader)
-	if err != nil {
-		h.sendErrorResponse(w, "Invalid token: "+err.Error(), http.StatusUnauthorized)
-		return
-	}
+	username := r.Header.Get("x-username")
+	userRole := r.Header.Get("x-user-role")
 
 	// Check if user is a guide (author)
-	if role != RoleGuide {
+	if userRole != RoleGuide {
 		h.sendErrorResponse(w, "Only guides can access their tours", http.StatusForbidden)
 		return
 	}
 
-	tours, err := h.service.GetToursByAuthor(authorUsername)
+	tours, err := h.service.GetToursByAuthor(username)
 	if err != nil {
 		h.sendErrorResponse(w, "Failed to fetch tours: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -127,6 +107,9 @@ func (h *TourHandler) GetTourByID(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *TourHandler) CreateKeyPoint(w http.ResponseWriter, r *http.Request) {
+	username := r.Header.Get("x-username")
+	userRole := r.Header.Get("x-user-role")
+
 	var request CreateKeyPointRequest
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		h.sendErrorResponse(w, "Invalid request body", http.StatusBadRequest)
@@ -138,21 +121,8 @@ func (h *TourHandler) CreateKeyPoint(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get username and role from JWT token
-	authHeader := r.Header.Get("Authorization")
-	if authHeader == "" {
-		h.sendErrorResponse(w, "Missing Authorization header", http.StatusUnauthorized)
-		return
-	}
-
-	authorUsername, role, err := GetUserInfoFromJWT(authHeader)
-	if err != nil {
-		h.sendErrorResponse(w, "Invalid token: "+err.Error(), http.StatusUnauthorized)
-		return
-	}
-
 	// Check if user is a guide (author)
-	if role != RoleGuide {
+	if userRole != RoleGuide {
 		h.sendErrorResponse(w, "Only guides can create key points", http.StatusForbidden)
 		return
 	}
@@ -164,12 +134,12 @@ func (h *TourHandler) CreateKeyPoint(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if tour.AuthorUsername != authorUsername {
+	if tour.AuthorUsername != username {
 		h.sendErrorResponse(w, "You can only add key points to your own tours", http.StatusForbidden)
 		return
 	}
 
-	keyPoint, err := h.service.CreateKeyPoint(&request, request.TourID, authorUsername)
+	keyPoint, err := h.service.CreateKeyPoint(&request, request.TourID, username)
 	if err != nil {
 		h.sendErrorResponse(w, "Failed to create key point: "+err.Error(), http.StatusInternalServerError)
 		return

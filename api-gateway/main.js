@@ -22,8 +22,15 @@ const blockInternalRoutes = (req, res, next) => {
 
 api.use(blockInternalRoutes);
 
+api.post('/api/auth/login', createProxyMiddleware({
+  target: AUTH_SERVICE_URL,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api/auth': '',
+  }
+}));
 
-api.user('/api/auth', validateJWT, createProxyMiddleware({
+api.use('/api/auth', validateJWT, createProxyMiddleware({
   target: AUTH_SERVICE_URL,
   changeOrigin: true,
   pathRewrite: {

@@ -17,11 +17,12 @@ func main() {
 	service := &TourService{repository: repository}
 	handler := &TourHandler{service: service}
 
-	r.HandleFunc("/create", handler.CreateTour).Methods(http.MethodPost)
-	r.HandleFunc("/my", handler.GetMyTours).Methods(http.MethodGet)
-	r.HandleFunc("/ping", handler.Ping).Methods(http.MethodGet)
-	r.HandleFunc("/keypoints/create", handler.CreateKeyPoint).Methods(http.MethodPost)
+	r.HandleFunc("/", handler.CreateTour).Methods(http.MethodPost)
+	r.HandleFunc("/", handler.GetMyTours).Methods(http.MethodGet)
+	r.HandleFunc("/keypoints", handler.CreateKeyPoint).Methods(http.MethodPost)
 	//r.HandleFunc("/{id}", handler.GetTourByID).Methods(http.MethodGet)
+
+	r.HandleFunc("/internal/ping", handler.Ping).Methods(http.MethodGet)
 
 	port := os.Getenv("PORT")
 	if port == "" {
