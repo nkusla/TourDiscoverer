@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 
+	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -17,7 +19,7 @@ func main() {
 	dbPassword := os.Getenv("BLOG_DB_PASSWORD")
 	dbName := os.Getenv("BLOG_DB_NAME")
 	url := fmt.Sprintf("mongodb://%s:%s@%s:%s/%s?authSource=admin", dbUsername, dbPassword, dbHost, dbPort, dbName)
-	client, err := mongo.Connect(nil, options.Client().ApplyURI(url))
+	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(url))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -26,21 +28,28 @@ func main() {
 	service := &BlogService{repository: repo}
 	handler := &BlogHandler{service: service}
 
-	http.HandleFunc("/blog", handler.CreateBlog)
-	http.HandleFunc("/blogs", handler.GetAllBlogs)
+	// Create Gorilla Mux router
+	r := mux.NewRouter().StrictSlash(true)
 
+	// Blog routes
+	r.HandleFunc("/", handler.CreateBlog).Methods(http.MethodPost)
+	r.HandleFunc("/", handler.GetAllBlogs).Methods(http.MethodGet)
+	r.HandleFunc("/like", handler.ToggleLike).Methods(http.MethodPost)
+	r.HandleFunc("/like-status", handler.GetLikeStatus).Methods(http.MethodGet)
+
+	// Comment routes
 	commentCollection := client.Database("blog_db").Collection("comments")
 	commentRepo := &CommentRepository{collection: commentCollection}
 	commentService := &CommentService{repository: commentRepo}
 	commentHandler := &CommentHandler{service: commentService}
 
-	http.HandleFunc("/comment", commentHandler.CreateComment)
-	http.HandleFunc("/comments", commentHandler.GetComments)
+	r.HandleFunc("/comment", commentHandler.CreateComment).Methods(http.MethodPost)
+	r.HandleFunc("/comments", commentHandler.GetComments).Methods(http.MethodGet)
 
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "3002"
 	}
 	log.Printf("Blog service running on port %s", port)
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	log.Fatal(http.ListenAndServe(":"+port, r))
 }
