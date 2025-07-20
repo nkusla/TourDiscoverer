@@ -2,7 +2,7 @@ const express = require('express');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const morgan = require('morgan');
 const { validateJWT, validateJWTWithRole, verifyUserExists } = require('./middleware');
-const { AUTH_SERVICE_URL, TOUR_SERVICE_URL, USER_ROLES } = require('./constants');
+const { AUTH_SERVICE_URL, TOUR_SERVICE_URL, BLOG_SERVICE_URL, USER_ROLES } = require('./constants');
 
 const dotenv = require('dotenv');
 dotenv.config();
@@ -30,6 +30,14 @@ api.post('/api/auth/login', createProxyMiddleware({
   }
 }));
 
+api.post('/api/auth/register', createProxyMiddleware({
+  target: AUTH_SERVICE_URL,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api/auth': '',
+  }
+}));
+
 api.use('/api/auth', validateJWT, createProxyMiddleware({
   target: AUTH_SERVICE_URL,
   changeOrigin: true,
@@ -43,6 +51,14 @@ api.use('/api/tours', validateJWT, createProxyMiddleware({
   changeOrigin: true,
   pathRewrite: {
     '^/api/tours': '',
+  },
+}));
+
+api.use('/api/blogs', validateJWT, createProxyMiddleware({
+  target: BLOG_SERVICE_URL,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api/blogs': '',
   },
 }));
 
