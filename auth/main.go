@@ -15,7 +15,7 @@ func main() {
 
 	repository := &UserRepository{database: database}
 	service := &UserService{repository: repository}
-	handler := &AuthHandler{service: service}
+	handler := &UserHandler{service: service}
 
 	r.HandleFunc("/register", handler.Register).Methods(http.MethodPost)
 	r.HandleFunc("/login", handler.Login).Methods(http.MethodPost)

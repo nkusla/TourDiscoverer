@@ -8,13 +8,13 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-type AuthHandler struct {
+type UserHandler struct {
 	service *UserService
 }
 
 var validate = validator.New()
 
-func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
+func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 	var registerReq RegisterRequest
 	err := json.NewDecoder(r.Body).Decode(&registerReq)
 	if err != nil {
@@ -42,7 +42,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
-func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
+func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var loginReq LoginRequest
 	err := json.NewDecoder(r.Body).Decode(&loginReq)
 	if err != nil {
@@ -72,7 +72,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(JWTResponse{Token: tokenString})
 }
 
-func (h *AuthHandler) GetAll(w http.ResponseWriter, r *http.Request) {
+func (h *UserHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 	userRole := r.Header.Get("x-user-role")
 	if userRole != "admin" {
 		http.Error(w, "unauthorized: Only admins can view all users", http.StatusForbidden)
@@ -90,7 +90,7 @@ func (h *AuthHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(users)
 }
 
-func (h *AuthHandler) BlockUser(w http.ResponseWriter, r *http.Request) {
+func (h *UserHandler) BlockUser(w http.ResponseWriter, r *http.Request) {
 	userRole := r.Header.Get("x-user-role")
 	if userRole != "admin" {
 		http.Error(w, "unauthorized: Only admins can block users", http.StatusForbidden)
@@ -122,7 +122,7 @@ func (h *AuthHandler) BlockUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *AuthHandler) Ping(w http.ResponseWriter, _ *http.Request) {
+func (h *UserHandler) Ping(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(PingResponse{Message: "pong", Service: "Auth Service"})
