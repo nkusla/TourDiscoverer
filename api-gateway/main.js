@@ -1,24 +1,14 @@
 const express = require('express');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const morgan = require('morgan');
-const { validateJWT, validateJWTWithRole, verifyUserExists } = require('./middleware');
-const { AUTH_SERVICE_URL, TOUR_SERVICE_URL, BLOG_SERVICE_URL, USER_ROLES } = require('./constants');
+const { validateJWT, blockInternalRoutes } = require('./middleware');
+const { AUTH_SERVICE_URL, TOUR_SERVICE_URL, BLOG_SERVICE_URL } = require('./constants');
 
 const dotenv = require('dotenv');
 dotenv.config();
 
 const api = express();
 api.use(morgan('dev'));
-
-const blockInternalRoutes = (req, res, next) => {
-  if (req.path.includes('/internal')) {
-    return res.status(403).json({
-      error: 'Forbidden',
-      message: 'Internal routes are not accessible externally'
-    });
-  }
-  next();
-};
 
 api.use(blockInternalRoutes);
 

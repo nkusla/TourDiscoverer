@@ -1,6 +1,5 @@
 const jwt = require('jsonwebtoken');
-const axios = require('axios');
-const { JWT_SECRET, AUTH_SERVICE_URL } = require('./constants');
+const { JWT_SECRET } = require('./constants');
 
 function validateJWT(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -32,66 +31,17 @@ function validateJWT(req, res, next) {
   }
 }
 
-function validateJWTWithRole(requiredRole) {
-  return (req, res, next) => {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-      return res.status(401).json({ message: 'Missing Authorization header' });
-    }
-
-    const token = authHeader.split(' ')[1];
-    if (!token) {
-      return res.status(401).json({ message: 'Token missing' });
-    }
-
-    try {
-      const decoded = jwt.verify(token, JWT_SECRET);
-
-      if (!decoded.username || !decoded.role) {
-        return res.status(403).json({
-          message: 'Invalid token: missing required fields (username and role)'
-        });
-      }
-
-      // Check if user has required role
-      if (decoded.role !== requiredRole) {
-        return res.status(403).json({
-          message: `Access denied. Required role: ${requiredRole}`
-        });
-      }
-
-      req.headers['x-user-role'] = decoded.role;
-      req.headers['x-username'] = decoded.username;
-
-      req.user = decoded;
-      next();
-    } catch (err) {
-      return res.status(403).json({ message: 'Invalid or expired token' });
-    }
-  };
-}
-
-async function verifyUserExists(req, res, next) {
-  const username = req.user?.username;
-  if (!username) {
-    return res.status(400).json({ message: 'Username missing in token' });
+function blockInternalRoutes(req, res, next) {
+  if (req.path.includes('/internal')) {
+    return res.status(403).json({
+      error: 'Forbidden',
+      message: 'Internal routes are not accessible externally'
+    });
   }
-
-  try {
-    const response = await axios.get(`${AUTH_SERVICE_URL}/user/${username}/exists`);
-
-    if (response.status === 200) {
-      return next();
-    } else {
-      return res.status(403).json({ message: 'User not found or inactive' });
-    }
-  } catch (err) {
-    return res.status(403).json({ message: 'User verification failed', error: err.message });
-  }
+  next();
 }
 
 module.exports = {
   validateJWT,
-  validateJWTWithRole,
-  verifyUserExists
+  blockInternalRoutes
 };
