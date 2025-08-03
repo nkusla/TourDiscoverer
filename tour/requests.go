@@ -7,6 +7,15 @@ type CreateTourRequest struct {
 	Tags        string `json:"tags"`
 }
 
+type UpdateTourRequest struct {
+	Name             string      `json:"name"`
+	Description      string      `json:"description"`
+	Difficulty       string      `json:"difficulty" validate:"omitempty,oneof=easy medium hard"`
+	Tags             string      `json:"tags"`
+	TransportDetails []Transport `json:"transport_details"`
+	Price            float64     `json:"price" validate:"omitempty,gt=0"`
+}
+
 type CreateKeyPointRequest struct {
 	Name        string  `json:"name" validate:"required"`
 	Description string  `json:"description"`
@@ -38,6 +47,11 @@ type CreateKeyPointResponse struct {
 	ImageURL    string  `json:"image_url"`
 	Order       int     `json:"order"`
 	Message     string  `json:"message"`
+}
+
+type TransportDetailsRequest struct {
+	Duration      uint   `json:"duration" validate:"required"`
+	TransportType string `json:"transport_type" validate:"required oneof=walking driving biking"`
 }
 
 type GetToursResponse struct {

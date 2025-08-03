@@ -35,6 +35,40 @@ func (service *TourService) CreateTour(request *CreateTourRequest, authorUsernam
 	return tour, nil
 }
 
+func (service *TourService) UpdateTour(id uint, request *UpdateTourRequest, authorUsername string) (*Tour, error) {
+	tour, err := service.repository.GetTourByID(id)
+	if err != nil {
+		return nil, ErrTourNotFound
+	}
+
+	if tour.AuthorUsername != authorUsername {
+		return nil, ErrUnauthorized
+	}
+
+	if tour.Status != TourStatusDraft {
+		return nil, ErrTourNotEditable
+	}
+
+	tour.Name = request.Name
+	tour.Description = request.Description
+	tour.Difficulty = request.Difficulty
+	tour.Tags = strings.TrimSpace(request.Tags)
+	tour.Price = request.Price
+
+	if request.TransportDetails != nil {
+		tour.TransportDetails = request.TransportDetails
+	} else {
+		tour.TransportDetails = []Transport{}
+	}
+
+	err = service.repository.UpdateTour(tour)
+	if err != nil {
+		return nil, err
+	}
+
+	return tour, nil
+}
+
 func (service *TourService) GetToursByAuthor(authorUsername string) ([]Tour, error) {
 	tours, err := service.repository.GetToursByAuthor(authorUsername)
 	if err != nil {
