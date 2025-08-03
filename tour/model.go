@@ -44,7 +44,12 @@ type KeyPoint struct {
 
 func (t *Tour) AddKeyPoint(keyPoint *KeyPoint) {
 	t.KeyPoints = append(t.KeyPoints, *keyPoint)
-	t.UpdateDistance()
+
+	if len(t.KeyPoints) > 1 {
+		t.UpdateDistance()
+	} else {
+		t.Distance = 0 // Reset distance if no key points or only one key point
+	}
 }
 
 func (t *Tour) UpdateDistance() {
