@@ -29,7 +29,7 @@ func (repo *TourRepository) GetTourByID(id uint) (*Tour, error) {
 }
 
 func (repo *TourRepository) UpdateTour(tour *Tour) error {
-	result := repo.database.Save(tour)
+	result := repo.database.Session(&gorm.Session{FullSaveAssociations: true}).Save(tour)
 	return result.Error
 }
 
@@ -38,7 +38,7 @@ func (repo *TourRepository) DeleteTour(id uint) error {
 	return result.Error
 }
 
-func (repo *TourRepository) CreateKeyPoint(keyPoint *KeyPoint) error {
-	result := repo.database.Create(keyPoint)
-	return result.Error
-}
+// func (repo *TourRepository) CreateKeyPoint(keyPoint *KeyPoint) error {
+// 	result := repo.database.Create(keyPoint)
+// 	return result.Error
+// }

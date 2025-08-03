@@ -42,6 +42,15 @@ type KeyPoint struct {
 	DeletedAt   gorm.DeletedAt `json:"-" gorm:"index"`
 }
 
+func (t *Tour) AddKeyPoint(keyPoint *KeyPoint) {
+	t.KeyPoints = append(t.KeyPoints, *keyPoint)
+	t.UpdateDistance()
+}
+
+func (t *Tour) UpdateDistance() {
+	t.Distance = Calculator.CalculateTourDistance(t.KeyPoints)
+}
+
 func (t *Tour) CanBePublished() bool {
 	if t.Name == "" || t.Description == "" || t.Difficulty == "" || t.Tags == "" {
 		return false

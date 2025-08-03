@@ -111,6 +111,14 @@ func (h *TourHandler) CreateKeyPoint(w http.ResponseWriter, r *http.Request) {
 	username := r.Header.Get("x-username")
 	userRole := r.Header.Get("x-user-role")
 
+	vars := mux.Vars(r)
+	idStr := vars["id"]
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		h.sendErrorResponse(w, "Invalid tour ID", http.StatusBadRequest)
+		return
+	}
+
 	var request CreateKeyPointRequest
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		h.sendErrorResponse(w, "Invalid request body", http.StatusBadRequest)
@@ -128,19 +136,7 @@ func (h *TourHandler) CreateKeyPoint(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check if the tour exists and if the user is the author of the tour
-	tour, err := h.service.GetTourByID(request.TourID)
-	if err != nil {
-		h.sendErrorResponse(w, "Tour not found", http.StatusNotFound)
-		return
-	}
-
-	if tour.AuthorUsername != username {
-		h.sendErrorResponse(w, "You can only add key points to your own tours", http.StatusForbidden)
-		return
-	}
-
-	keyPoint, err := h.service.CreateKeyPoint(&request, request.TourID, username)
+	keyPoint, err := h.service.CreateKeyPoint(&request, uint(id), username)
 	if err != nil {
 		h.sendErrorResponse(w, "Failed to create key point: "+err.Error(), http.StatusInternalServerError)
 		return

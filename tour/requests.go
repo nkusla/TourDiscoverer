@@ -8,7 +8,6 @@ type CreateTourRequest struct {
 }
 
 type CreateKeyPointRequest struct {
-	TourID      uint    `json:"tour_id" validate:"required"`
 	Name        string  `json:"name" validate:"required"`
 	Description string  `json:"description"`
 	Latitude    float64 `json:"latitude" validate:"required"`

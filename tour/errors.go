@@ -8,4 +8,5 @@ var (
 	ErrTourNotPublishable  = errors.New("tour cannot be published")
 	ErrTourNotArchivable   = errors.New("tour cannot be archived")
 	ErrTourNotUnarchivable = errors.New("tour cannot be unarchived")
+	ErrTourNotEditable     = errors.New("tour cannot be edited")
 )

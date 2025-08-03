@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 )
 
@@ -49,18 +48,21 @@ func (service *TourService) GetTourByID(id uint) (*Tour, error) {
 }
 
 func (service *TourService) CreateKeyPoint(request *CreateKeyPointRequest, tourID uint, authorUsername string) (*KeyPoint, error) {
-	// Check if tour exists and belongs to the author
 	tour, err := service.repository.GetTourByID(tourID)
 	if err != nil {
-		return nil, err
+		return nil, ErrTourNotFound
 	}
 
 	if tour.AuthorUsername != authorUsername {
-		return nil, fmt.Errorf("you can only add key points to your own tours")
+		return nil, ErrUnauthorized
+	}
+
+	if tour.Status != TourStatusDraft {
+		return nil, ErrTourNotEditable
 	}
 
 	keyPoint := &KeyPoint{
-		TourID:      tourID,
+		TourID:      tour.ID,
 		Name:        request.Name,
 		Description: request.Description,
 		Latitude:    request.Latitude,
@@ -69,7 +71,8 @@ func (service *TourService) CreateKeyPoint(request *CreateKeyPointRequest, tourI
 		Order:       request.Order,
 	}
 
-	err = service.repository.CreateKeyPoint(keyPoint)
+	tour.AddKeyPoint(keyPoint)
+	err = service.repository.UpdateTour(tour)
 	if err != nil {
 		return nil, err
 	}

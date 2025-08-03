@@ -19,7 +19,7 @@ func main() {
 
 	r.HandleFunc("/", handler.CreateTour).Methods(http.MethodPost)
 	r.HandleFunc("/", handler.GetMyTours).Methods(http.MethodGet)
-	r.HandleFunc("/keypoints", handler.CreateKeyPoint).Methods(http.MethodPost)
+	r.HandleFunc("/{id}/keypoint", handler.CreateKeyPoint).Methods(http.MethodPost)
 	r.HandleFunc("/{id}/publish", handler.PublishTour).Methods(http.MethodPut)
 	r.HandleFunc("/{id}/archive", handler.ArchiveTour).Methods(http.MethodPut)
 	r.HandleFunc("/{id}/unarchive", handler.UnarchiveTour).Methods(http.MethodPut)
