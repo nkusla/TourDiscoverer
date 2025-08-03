@@ -16,14 +16,16 @@ func (service *TourService) CreateTour(request *CreateTourRequest, authorUsernam
 	}
 
 	tour := &Tour{
-		Name:           request.Name,
-		Description:    request.Description,
-		Difficulty:     request.Difficulty,
-		Tags:           strings.TrimSpace(request.Tags),
-		Status:         TourStatusDraft,
-		Price:          0,
-		AuthorUsername: authorUsername,
-		KeyPoints:      []KeyPoint{},
+		Name:             request.Name,
+		Description:      request.Description,
+		Difficulty:       request.Difficulty,
+		Tags:             strings.TrimSpace(request.Tags),
+		Status:           TourStatusDraft,
+		Price:            0,
+		AuthorUsername:   authorUsername,
+		TransportDetails: []Transport{},
+		Distance:         0,
+		KeyPoints:        []KeyPoint{},
 	}
 
 	err := service.repository.CreateTour(tour)
@@ -73,6 +75,25 @@ func (service *TourService) CreateKeyPoint(request *CreateKeyPointRequest, tourI
 	}
 
 	return keyPoint, nil
+}
+
+func (service *TourService) PublishTour(tourID uint, authorUsername string) error {
+	tour, err := service.repository.GetTourByID(tourID)
+	if err != nil {
+		return err
+	}
+
+	if tour.AuthorUsername != authorUsername {
+		return ErrUnauthorized
+	}
+
+	if !tour.CanBePublished() {
+		return ErrTourNotPublishable
+	}
+
+	tour.Status = TourStatusPublished
+
+	return service.repository.UpdateTour(tour)
 }
 
 func isValidDifficulty(difficulty string) bool {

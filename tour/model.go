@@ -6,26 +6,26 @@ import (
 	"gorm.io/gorm"
 )
 
-// User role constants
-const (
-	RoleTourist = "tourist"
-	RoleGuide   = "guide"
-	RoleAdmin   = "admin"
-)
-
 type Tour struct {
-	ID             uint           `json:"id" gorm:"primaryKey"`
-	Name           string         `json:"name" gorm:"not null" validate:"required"`
-	Description    string         `json:"description"`
-	Difficulty     string         `json:"difficulty" validate:"required"`
-	Tags           string         `json:"tags"`
-	Status         string         `json:"status" gorm:"default:'draft'"`
-	Price          float64        `json:"price" gorm:"default:0"`
-	AuthorUsername string         `json:"author_username" gorm:"not null"`
-	KeyPoints      []KeyPoint     `json:"key_points" gorm:"foreignKey:TourID"`
-	CreatedAt      time.Time      `json:"created_at"`
-	UpdatedAt      time.Time      `json:"updated_at"`
-	DeletedAt      gorm.DeletedAt `json:"-" gorm:"index"`
+	ID               uint           `json:"id" gorm:"primaryKey"`
+	Name             string         `json:"name" gorm:"not null" validate:"required"`
+	Description      string         `json:"description" validate:"required"`
+	Difficulty       string         `json:"difficulty" validate:"required"`
+	Tags             string         `json:"tags" validate:"required"`
+	Status           string         `json:"status" gorm:"default:'draft'"`
+	Price            float64        `json:"price" gorm:"default:0"`
+	TransportDetails []Transport    `json:"transport_details" gorm:"type:jsonb;serializer:json"`
+	Distance         float64        `json:"distance" gorm:"default:0"`
+	AuthorUsername   string         `json:"author_username" gorm:"not null"`
+	KeyPoints        []KeyPoint     `json:"key_points" gorm:"foreignKey:TourID"`
+	CreatedAt        time.Time      `json:"created_at"`
+	UpdatedAt        time.Time      `json:"updated_at"`
+	DeletedAt        gorm.DeletedAt `json:"-" gorm:"index"`
+}
+
+type Transport struct {
+	Duration      uint   `json:"duration"`
+	TransportType string `json:"transport_type"`
 }
 
 type KeyPoint struct {
@@ -42,14 +42,38 @@ type KeyPoint struct {
 	DeletedAt   gorm.DeletedAt `json:"-" gorm:"index"`
 }
 
-const (
-	TourStatusDraft     = "draft"
-	TourStatusPublished = "published"
-	TourStatusArchived  = "archived"
-)
+func (t *Tour) CanBePublished() bool {
+	if t.Name == "" || t.Description == "" || t.Difficulty == "" || t.Tags == "" {
+		return false
+	}
 
-const (
-	DifficultyEasy   = "easy"
-	DifficultyMedium = "medium"
-	DifficultyHard   = "hard"
-)
+	if t.Status != TourStatusDraft {
+		return false
+	}
+
+	if len(t.KeyPoints) < 2 {
+		return false
+	}
+
+	if len(t.TransportDetails) < 1 {
+		return false
+	}
+
+	return true
+}
+
+func (t *Tour) CanBeArchived() bool {
+	if t.Status != TourStatusPublished {
+		return false
+	}
+
+	return true
+}
+
+func (t *Tour) CanBeUnarchived() bool {
+	if t.Status != TourStatusArchived {
+		return false
+	}
+
+	return true
+}

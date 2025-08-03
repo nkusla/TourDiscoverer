@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -160,6 +161,42 @@ func (h *TourHandler) CreateKeyPoint(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(response)
+}
+
+func (h *TourHandler) PublishTour(w http.ResponseWriter, r *http.Request) {
+	username := r.Header.Get("x-username")
+	userRole := r.Header.Get("x-user-role")
+
+	vars := mux.Vars(r)
+	idStr := vars["id"]
+
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		h.sendErrorResponse(w, "Invalid tour ID", http.StatusBadRequest)
+		return
+	}
+
+	// Check if user is a guide (author)
+	if userRole != RoleGuide {
+		h.sendErrorResponse(w, "Only guides can publish tours", http.StatusForbidden)
+		return
+	}
+
+	err = h.service.PublishTour(uint(id), username)
+	if err != nil {
+		switch {
+		case errors.Is(err, ErrTourNotFound):
+			h.sendErrorResponse(w, "Tour not found", http.StatusNotFound)
+		case errors.Is(err, ErrUnauthorized):
+			h.sendErrorResponse(w, "Unauthorized: You can only publish your own tours", http.StatusForbidden)
+		case errors.Is(err, ErrTourNotPublishable):
+			h.sendErrorResponse(w, "Tour cannot be published: "+err.Error(), http.StatusBadRequest)
+		default:
+			h.sendErrorResponse(w, "Failed to publish tour: "+err.Error(), http.StatusInternalServerError)
+		}
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func (h *TourHandler) Ping(w http.ResponseWriter, _ *http.Request) {

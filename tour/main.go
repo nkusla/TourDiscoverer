@@ -20,7 +20,7 @@ func main() {
 	r.HandleFunc("/", handler.CreateTour).Methods(http.MethodPost)
 	r.HandleFunc("/", handler.GetMyTours).Methods(http.MethodGet)
 	r.HandleFunc("/keypoints", handler.CreateKeyPoint).Methods(http.MethodPost)
-	//r.HandleFunc("/{id}", handler.GetTourByID).Methods(http.MethodGet)
+	r.HandleFunc("/{id}/publish", handler.PublishTour).Methods(http.MethodPut)
 
 	r.HandleFunc("/internal/ping", handler.Ping).Methods(http.MethodGet)
 

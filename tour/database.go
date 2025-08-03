@@ -43,13 +43,19 @@ func SeedTour(db *gorm.DB) {
 
 	sampleTours := []Tour{
 		{
-			Name:           "Belgrade City Tour",
-			Description:    "Explore the beautiful capital of Serbia",
-			Difficulty:     DifficultyEasy,
-			Tags:           "city,culture,history",
-			Status:         TourStatusDraft,
-			Price:          0,
-			AuthorUsername: "admin123",
+			Name:        "Belgrade City Tour",
+			Description: "Explore the beautiful capital of Serbia",
+			Difficulty:  DifficultyEasy,
+			Tags:        "city,culture,history",
+			Status:      TourStatusDraft,
+			Price:       0,
+			TransportDetails: []Transport{
+				{
+					TransportType: TransportDriving,
+					Duration:      30,
+				},
+			},
+			AuthorUsername: "guide1",
 			KeyPoints: []KeyPoint{
 				{
 					Name:        "Kalemegdan Fortress",
@@ -70,13 +76,14 @@ func SeedTour(db *gorm.DB) {
 			},
 		},
 		{
-			Name:           "Novi Sad Adventure",
-			Description:    "Discover the cultural capital of Vojvodina",
-			Difficulty:     DifficultyMedium,
-			Tags:           "culture,fortress,danube",
-			Status:         TourStatusDraft,
-			Price:          0,
-			AuthorUsername: "admin123",
+			Name:             "Novi Sad Adventure",
+			Description:      "Discover the cultural capital of Vojvodina",
+			Difficulty:       DifficultyMedium,
+			Tags:             "culture,fortress,danube",
+			Status:           TourStatusDraft,
+			Price:            0,
+			AuthorUsername:   "guide1",
+			TransportDetails: []Transport{},
 			KeyPoints: []KeyPoint{
 				{
 					Name:        "Petrovaradin Fortress",
