@@ -80,7 +80,7 @@ func (service *TourService) CreateKeyPoint(request *CreateKeyPointRequest, tourI
 func (service *TourService) PublishTour(tourID uint, authorUsername string) error {
 	tour, err := service.repository.GetTourByID(tourID)
 	if err != nil {
-		return err
+		return ErrTourNotFound
 	}
 
 	if tour.AuthorUsername != authorUsername {
@@ -89,6 +89,44 @@ func (service *TourService) PublishTour(tourID uint, authorUsername string) erro
 
 	if !tour.CanBePublished() {
 		return ErrTourNotPublishable
+	}
+
+	tour.Status = TourStatusPublished
+
+	return service.repository.UpdateTour(tour)
+}
+
+func (service *TourService) ArchiveTour(tourID uint, authorUsername string) error {
+	tour, err := service.repository.GetTourByID(tourID)
+	if err != nil {
+		return ErrTourNotFound
+	}
+
+	if tour.AuthorUsername != authorUsername {
+		return ErrUnauthorized
+	}
+
+	if !tour.CanBeArchived() {
+		return ErrTourNotArchivable
+	}
+
+	tour.Status = TourStatusArchived
+
+	return service.repository.UpdateTour(tour)
+}
+
+func (service *TourService) UnarchiveTour(tourID uint, authorUsername string) error {
+	tour, err := service.repository.GetTourByID(tourID)
+	if err != nil {
+		return ErrTourNotFound
+	}
+
+	if tour.AuthorUsername != authorUsername {
+		return ErrUnauthorized
+	}
+
+	if !tour.CanBeUnarchived() {
+		return ErrTourNotUnarchivable
 	}
 
 	tour.Status = TourStatusPublished

@@ -199,6 +199,80 @@ func (h *TourHandler) PublishTour(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+func (h *TourHandler) ArchiveTour(w http.ResponseWriter, r *http.Request) {
+	username := r.Header.Get("x-username")
+	userRole := r.Header.Get("x-user-role")
+
+	vars := mux.Vars(r)
+	idStr := vars["id"]
+
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		h.sendErrorResponse(w, "Invalid tour ID", http.StatusBadRequest)
+		return
+	}
+
+	// Check if user is a guide (author)
+	if userRole != RoleGuide {
+		h.sendErrorResponse(w, "Only guides can archive tours", http.StatusForbidden)
+		return
+	}
+
+	err = h.service.ArchiveTour(uint(id), username)
+	if err != nil {
+		switch {
+		case errors.Is(err, ErrTourNotFound):
+			h.sendErrorResponse(w, "Tour not found", http.StatusNotFound)
+		case errors.Is(err, ErrUnauthorized):
+			h.sendErrorResponse(w, "Unauthorized: You can only archive your own tours", http.StatusForbidden)
+		case errors.Is(err, ErrTourNotArchivable):
+			h.sendErrorResponse(w, "Tour cannot be archived: "+err.Error(), http.StatusBadRequest)
+		default:
+			h.sendErrorResponse(w, "Failed to archive tour: "+err.Error(), http.StatusInternalServerError)
+		}
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *TourHandler) UnarchiveTour(w http.ResponseWriter, r *http.Request) {
+	username := r.Header.Get("x-username")
+	userRole := r.Header.Get("x-user-role")
+
+	vars := mux.Vars(r)
+	idStr := vars["id"]
+
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		h.sendErrorResponse(w, "Invalid tour ID", http.StatusBadRequest)
+		return
+	}
+
+	// Check if user is a guide (author)
+	if userRole != RoleGuide {
+		h.sendErrorResponse(w, "Only guides can unarchive tours", http.StatusForbidden)
+		return
+	}
+
+	err = h.service.UnarchiveTour(uint(id), username)
+	if err != nil {
+		switch {
+		case errors.Is(err, ErrTourNotFound):
+			h.sendErrorResponse(w, "Tour not found", http.StatusNotFound)
+		case errors.Is(err, ErrUnauthorized):
+			h.sendErrorResponse(w, "Unauthorized: You can only unarchive your own tours", http.StatusForbidden)
+		case errors.Is(err, ErrTourNotUnarchivable):
+			h.sendErrorResponse(w, "Tour cannot be unarchived: "+err.Error(), http.StatusBadRequest)
+		default:
+			h.sendErrorResponse(w, "Failed to unarchive tour: "+err.Error(), http.StatusInternalServerError)
+		}
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
 func (h *TourHandler) Ping(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
