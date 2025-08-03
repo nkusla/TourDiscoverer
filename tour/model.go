@@ -63,17 +63,9 @@ func (t *Tour) CanBePublished() bool {
 }
 
 func (t *Tour) CanBeArchived() bool {
-	if t.Status != TourStatusPublished {
-		return false
-	}
-
-	return true
+	return t.Status == TourStatusPublished
 }
 
 func (t *Tour) CanBeUnarchived() bool {
-	if t.Status != TourStatusArchived {
-		return false
-	}
-
-	return true
+	return t.Status == TourStatusArchived
 }
