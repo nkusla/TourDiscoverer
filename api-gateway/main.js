@@ -2,7 +2,7 @@ const express = require('express');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const morgan = require('morgan');
 const { validateJWT, blockInternalRoutes } = require('./middleware');
-const { AUTH_SERVICE_URL, TOUR_SERVICE_URL, BLOG_SERVICE_URL } = require('./constants');
+const { AUTH_SERVICE_URL, STAKEHOLDER_SERVICE_URL, TOUR_SERVICE_URL, BLOG_SERVICE_URL } = require('./constants');
 
 const dotenv = require('dotenv');
 dotenv.config();
@@ -33,6 +33,24 @@ api.use('/api/auth', validateJWT, createProxyMiddleware({
   changeOrigin: true,
   pathRewrite: {
     '^/api/auth': '',
+  }
+}));
+
+// Public stakeholder routes (for creating profiles)
+api.use('/api/stakeholder', createProxyMiddleware({
+  target: STAKEHOLDER_SERVICE_URL,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api/stakeholder': '',
+  }
+}));
+
+// Protected stakeholder routes (profile management)
+api.use('/api/profile', validateJWT, createProxyMiddleware({
+  target: STAKEHOLDER_SERVICE_URL,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api/profile': '',
   }
 }));
 
