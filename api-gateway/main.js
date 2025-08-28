@@ -36,21 +36,21 @@ api.use('/api/auth', validateJWT, createProxyMiddleware({
   }
 }));
 
+// Protected stakeholder profile routes (must come first for specificity)
+api.use('/api/stakeholder/profile', validateJWT, createProxyMiddleware({
+  target: STAKEHOLDER_SERVICE_URL,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api/stakeholder/profile': '/profile',
+  }
+}));
+
 // Public stakeholder routes (for creating profiles)
 api.use('/api/stakeholder', createProxyMiddleware({
   target: STAKEHOLDER_SERVICE_URL,
   changeOrigin: true,
   pathRewrite: {
     '^/api/stakeholder': '',
-  }
-}));
-
-// Protected stakeholder routes (profile management)
-api.use('/api/profile', validateJWT, createProxyMiddleware({
-  target: STAKEHOLDER_SERVICE_URL,
-  changeOrigin: true,
-  pathRewrite: {
-    '^/api/profile': '',
   }
 }));
 
