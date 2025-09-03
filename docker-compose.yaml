@@ -2,13 +2,13 @@ services:
   api-gateway:
     profiles: ["service"]
     build:
-      context: ./api-gateway
+      context: ./backend/api-gateway
       dockerfile: Dockerfile
     image: td-api-gateway
     container_name: td-api-gateway
     hostname: ${API_GATEWAY_HOST}
     environment:
-      - PORT=${API_GATEWAY_PORT}
+      - API_GATEWAY_PORT=${API_GATEWAY_PORT}
       - AUTH_SERVICE_URL=http://${AUTH_SERVICE_HOST}:${AUTH_SERVICE_PORT}
       - STAKEHOLDER_SERVICE_URL=http://${STAKEHOLDER_SERVICE_HOST}:${STAKEHOLDER_SERVICE_PORT}
       - TOUR_SERVICE_URL=http://${TOUR_SERVICE_HOST}:${TOUR_SERVICE_PORT}
@@ -121,7 +121,7 @@ services:
   auth-service:
     profiles: ["service"]
     build:
-      context: ./auth
+      context: ./backend/auth
       dockerfile: Dockerfile
     image: td-auth-service
     container_name: td-auth-service
@@ -143,7 +143,7 @@ services:
   follower-service:
     profiles: ["service"]
     build:
-      context: ./follower
+      context: ./backend/follower
       dockerfile: Dockerfile
     image: td-follower-service
     container_name: td-follower-service
@@ -160,7 +160,7 @@ services:
   stakeholder-service:
     profiles: ["service"]
     build:
-      context: ./stakeholder
+      context: ./backend/stakeholder
       dockerfile: Dockerfile
     image: td-stakeholder-service
     container_name: td-stakeholder-service
@@ -178,7 +178,7 @@ services:
   tour-service:
     profiles: ["service"]
     build:
-      context: ./tour
+      context: ./backend/tour
       dockerfile: Dockerfile
     image: td-tour-service
     container_name: td-tour-service
@@ -197,7 +197,7 @@ services:
   blog-service:
     profiles: ["service"]
     build:
-      context: ./blog
+      context: ./backend/blog
       dockerfile: Dockerfile
     image: td-blog-service
     container_name: td-blog-service
@@ -215,7 +215,7 @@ services:
   review-service:
     profiles: ["service"]
     build:
-      context: ./review
+      context: ./backend/review
       dockerfile: Dockerfile
     image: td-review-service
     container_name: td-review-service
@@ -230,10 +230,26 @@ services:
     ports:
       - "${REVIEW_SERVICE_PORT}:${REVIEW_SERVICE_PORT}"
 
+  frontend:
+    profiles: ["service"]
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: td-frontend
+    container_name: td-frontend
+    hostname: ${FRONTEND_HOST}
+    environment:
+      - NODE_ENV=production
+      - VITE_API_URL=http://${API_GATEWAY_HOST}:${API_GATEWAY_PORT}
+    ports:
+      - "${FRONTEND_PORT}:3000"
+    depends_on:
+      - api-gateway
+
   seed:
     profiles: ["service"]
     build:
-      context: ./seed
+      context: ./backend/seed
       dockerfile: Dockerfile
     image: td-seed
     container_name: td-seed
