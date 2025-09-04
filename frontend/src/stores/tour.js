@@ -10,9 +10,10 @@ export const useTourStore = defineStore('tour', () => {
   const fetchTours = async (params = {}) => {
     loading.value = true
     try {
-      const response = await api.get('/tours', { params })
-      tours.value = response.data
-      return response.data
+      const response = await api.get('/api/tours', { params })
+      // Backend returns { tours: [...], count: number }
+      tours.value = response.data.tours || []
+      return response.data.tours || []
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to fetch tours')
     } finally {
@@ -22,7 +23,7 @@ export const useTourStore = defineStore('tour', () => {
   
   const getTour = async (id) => {
     try {
-      const response = await api.get(`/tours/${id}`)
+      const response = await api.get(`/api/tours/${id}`)
       currentTour.value = response.data
       return response.data
     } catch (error) {
@@ -32,7 +33,7 @@ export const useTourStore = defineStore('tour', () => {
   
   const createTour = async (tourData) => {
     try {
-      const response = await api.post('/tours', tourData)
+      const response = await api.post('/api/tours', tourData)
       tours.value.unshift(response.data)
       return response.data
     } catch (error) {
@@ -42,7 +43,7 @@ export const useTourStore = defineStore('tour', () => {
   
   const updateTour = async (id, tourData) => {
     try {
-      const response = await api.put(`/tours/${id}`, tourData)
+      const response = await api.put(`/api/tours/${id}`, tourData)
       
       // Update tour in the list
       const index = tours.value.findIndex(tour => tour.id === id)
@@ -59,7 +60,7 @@ export const useTourStore = defineStore('tour', () => {
   
   const deleteTour = async (id) => {
     try {
-      await api.delete(`/tours/${id}`)
+      await api.delete(`/api/tours/${id}`)
       
       // Remove tour from the list
       const index = tours.value.findIndex(tour => tour.id === id)
@@ -75,7 +76,7 @@ export const useTourStore = defineStore('tour', () => {
   
   const publishTour = async (id) => {
     try {
-      const response = await api.patch(`/tours/${id}/publish`)
+      const response = await api.patch(`/api/tours/${id}/publish`)
       
       // Update tour status in the list
       const index = tours.value.findIndex(tour => tour.id === id)
@@ -91,7 +92,7 @@ export const useTourStore = defineStore('tour', () => {
   
   const unpublishTour = async (id) => {
     try {
-      const response = await api.patch(`/tours/${id}/unpublish`)
+      const response = await api.patch(`/api/tours/${id}/unpublish`)
       
       // Update tour status in the list
       const index = tours.value.findIndex(tour => tour.id === id)
@@ -108,7 +109,7 @@ export const useTourStore = defineStore('tour', () => {
   // Key point management
   const addKeyPoint = async (tourId, keyPointData) => {
     try {
-      const response = await api.post(`/tours/${tourId}/keypoints`, keyPointData)
+      const response = await api.post(`/api/tours/${tourId}/keypoints`, keyPointData)
       return response.data
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to add key point')
@@ -117,7 +118,7 @@ export const useTourStore = defineStore('tour', () => {
   
   const updateKeyPoint = async (tourId, keyPointId, keyPointData) => {
     try {
-      const response = await api.put(`/tours/${tourId}/keypoints/${keyPointId}`, keyPointData)
+      const response = await api.put(`/api/tours/${tourId}/keypoints/${keyPointId}`, keyPointData)
       return response.data
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to update key point')
@@ -126,7 +127,7 @@ export const useTourStore = defineStore('tour', () => {
   
   const deleteKeyPoint = async (tourId, keyPointId) => {
     try {
-      await api.delete(`/tours/${tourId}/keypoints/${keyPointId}`)
+      await api.delete(`/api/tours/${tourId}/keypoints/${keyPointId}`)
       return true
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to delete key point')
@@ -136,7 +137,7 @@ export const useTourStore = defineStore('tour', () => {
   const searchTours = async (query, filters = {}) => {
     try {
       const params = { search: query, ...filters }
-      const response = await api.get('/tours/search', { params })
+      const response = await api.get('/api/tours/search', { params })
       return response.data
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Search failed')
@@ -145,7 +146,7 @@ export const useTourStore = defineStore('tour', () => {
   
   const getPopularTours = async (limit = 10) => {
     try {
-      const response = await api.get('/tours/popular', { params: { limit } })
+      const response = await api.get('/api/tours/popular', { params: { limit } })
       return response.data
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to fetch popular tours')
@@ -154,7 +155,7 @@ export const useTourStore = defineStore('tour', () => {
   
   const getNearbyTours = async (latitude, longitude, radius = 50) => {
     try {
-      const response = await api.get('/tours/nearby', {
+      const response = await api.get('/api/tours/nearby', {
         params: { latitude, longitude, radius }
       })
       return response.data

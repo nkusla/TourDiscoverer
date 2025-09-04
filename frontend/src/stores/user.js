@@ -12,7 +12,7 @@ export const useUserStore = defineStore('user', () => {
   
   const login = async (credentials) => {
     try {
-      const response = await api.post('/auth/login', credentials)
+      const response = await api.post('/api/auth/login', credentials)
       const { token: authToken, user: userData } = response.data
       
       token.value = authToken
@@ -32,9 +32,36 @@ export const useUserStore = defineStore('user', () => {
   
   const register = async (userData) => {
     try {
-      const response = await api.post('/auth/register', userData)
+      console.log('Attempting registration with:', userData)
+      const response = await api.post('/api/auth/register', userData)
+      console.log('Registration response:', response.data)
+      
+      // After successful registration, automatically log the user in
+      if (response.data) {
+        console.log('Attempting auto-login after registration')
+        const loginResponse = await api.post('/api/auth/login', {
+          username: userData.username,
+          password: userData.password
+        })
+        
+        console.log('Auto-login response:', loginResponse.data)
+        const { token: authToken, user: userInfo } = loginResponse.data
+        
+        token.value = authToken
+        user.value = userInfo
+        
+        localStorage.setItem('token', authToken)
+        localStorage.setItem('user', JSON.stringify(userInfo))
+        
+        // Set token for future API calls
+        api.defaults.headers.common['Authorization'] = `Bearer ${authToken}`
+        
+        return userInfo
+      }
+      
       return response.data
     } catch (error) {
+      console.error('Registration error:', error)
       throw new Error(error.response?.data?.message || 'Registration failed')
     }
   }
@@ -50,13 +77,24 @@ export const useUserStore = defineStore('user', () => {
   }
   
   const loadUserFromStorage = () => {
-    const storedUser = localStorage.getItem('user')
-    const storedToken = localStorage.getItem('token')
-    
-    if (storedUser && storedToken) {
-      user.value = JSON.parse(storedUser)
-      token.value = storedToken
-      api.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`
+    try {
+      const storedUser = localStorage.getItem('user')
+      const storedToken = localStorage.getItem('token')
+      
+      if (storedUser && storedToken && storedUser !== 'undefined' && storedUser !== 'null') {
+        const parsedUser = JSON.parse(storedUser)
+        user.value = parsedUser
+        token.value = storedToken
+        api.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`
+      }
+    } catch (error) {
+      console.warn('Error loading user from storage:', error)
+      // Clear corrupted data
+      localStorage.removeItem('user')
+      localStorage.removeItem('token')
+      user.value = null
+      token.value = null
+      delete api.defaults.headers.common['Authorization']
     }
   }
   

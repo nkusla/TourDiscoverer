@@ -4,13 +4,25 @@
       <div class="container">
         <div class="row">
           <div class="col-lg-8 mx-auto text-center">
-            <h1 class="display-4 mb-4">Discover Amazing Tours</h1>
-            <p class="lead mb-4">
+            <h1 class="display-4 mb-4" v-if="!isAuthenticated">Discover Amazing Tours</h1>
+            <h1 class="display-4 mb-4" v-else>Welcome back, {{ userStore.username }}!</h1>
+            <p class="lead mb-4" v-if="!isAuthenticated">
               Explore incredible destinations and create unforgettable memories with our curated tours.
             </p>
-            <router-link to="/tours" class="btn btn-light btn-lg">
-              Browse Tours
-            </router-link>
+            <p class="lead mb-4" v-else>
+              Ready to explore new adventures? Browse tours or create your own unique experience.
+            </p>
+            <div class="d-grid d-md-flex justify-content-md-center gap-2">
+              <router-link to="/tours" class="btn btn-light btn-lg">
+                Browse Tours
+              </router-link>
+              <router-link v-if="isAuthenticated" to="/tour/create" class="btn btn-outline-light btn-lg">
+                Create Tour
+              </router-link>
+              <router-link v-else to="/login" class="btn btn-outline-light btn-lg">
+                Join Now
+              </router-link>
+            </div>
           </div>
         </div>
       </div>
@@ -59,8 +71,20 @@
 </template>
 
 <script>
+import { computed } from 'vue'
+import { useUserStore } from '../stores/user'
+
 export default {
-  name: 'Home'
+  name: 'Home',
+  setup() {
+    const userStore = useUserStore()
+    const isAuthenticated = computed(() => userStore.isAuthenticated)
+    
+    return {
+      userStore,
+      isAuthenticated
+    }
+  }
 }
 </script>
 

@@ -41,6 +41,10 @@
                   </div>
                 </div>
                 
+                <div v-if="successMessage" class="alert alert-success" role="alert">
+                  <i class="fas fa-check-circle me-2"></i>{{ successMessage }}
+                </div>
+                
                 <div v-if="errors.general" class="alert alert-danger" role="alert">
                   {{ errors.general }}
                 </div>
@@ -84,6 +88,36 @@
           </div>
           <div class="modal-body">
             <form @submit.prevent="handleRegister">
+              <div class="mb-3">
+                <label class="form-label">First Name</label>
+                <input 
+                  v-model="registerForm.firstName" 
+                  type="text" 
+                  class="form-control"
+                  :class="{ 'is-invalid': registerErrors.firstName }"
+                  required
+                  placeholder="Enter your first name"
+                />
+                <div v-if="registerErrors.firstName" class="invalid-feedback">
+                  {{ registerErrors.firstName }}
+                </div>
+              </div>
+              
+              <div class="mb-3">
+                <label class="form-label">Last Name</label>
+                <input 
+                  v-model="registerForm.lastName" 
+                  type="text" 
+                  class="form-control"
+                  :class="{ 'is-invalid': registerErrors.lastName }"
+                  required
+                  placeholder="Enter your last name"
+                />
+                <div v-if="registerErrors.lastName" class="invalid-feedback">
+                  {{ registerErrors.lastName }}
+                </div>
+              </div>
+              
               <div class="mb-3">
                 <label class="form-label">Username</label>
                 <input 
@@ -144,6 +178,23 @@
                 </div>
               </div>
               
+              <div class="mb-3">
+                <label class="form-label">Role</label>
+                <select 
+                  v-model="registerForm.role" 
+                  class="form-select"
+                  :class="{ 'is-invalid': registerErrors.role }"
+                  required
+                >
+                  <option value="">Select your role</option>
+                  <option value="guide">Guide</option>
+                  <option value="tourist">Tourist</option>
+                </select>
+                <div v-if="registerErrors.role" class="invalid-feedback">
+                  {{ registerErrors.role }}
+                </div>
+              </div>
+              
               <div v-if="registerErrors.general" class="alert alert-danger" role="alert">
                 {{ registerErrors.general }}
               </div>
@@ -187,6 +238,7 @@ export default {
     
     const loading = ref(false)
     const registerLoading = ref(false)
+    const successMessage = ref('')
     
     const loginForm = ref({
       username: '',
@@ -194,10 +246,13 @@ export default {
     })
     
     const registerForm = ref({
+      firstName: '',
+      lastName: '',
       username: '',
       email: '',
       password: '',
-      confirmPassword: ''
+      confirmPassword: '',
+      role: ''
     })
     
     const errors = ref({})
@@ -234,6 +289,14 @@ export default {
     const validateRegisterForm = () => {
       registerErrors.value = {}
       
+      if (!registerForm.value.firstName.trim()) {
+        registerErrors.value.firstName = 'First name is required'
+      }
+      
+      if (!registerForm.value.lastName.trim()) {
+        registerErrors.value.lastName = 'Last name is required'
+      }
+      
       if (!registerForm.value.username.trim()) {
         registerErrors.value.username = 'Username is required'
       } else if (registerForm.value.username.length < 3) {
@@ -256,6 +319,10 @@ export default {
         registerErrors.value.confirmPassword = 'Passwords do not match'
       }
       
+      if (!registerForm.value.role) {
+        registerErrors.value.role = 'Please select a role'
+      }
+      
       return Object.keys(registerErrors.value).length === 0
     }
     
@@ -264,10 +331,14 @@ export default {
       
       loading.value = true
       errors.value = {}
+      successMessage.value = ''
       
       try {
         await userStore.login(loginForm.value)
-        router.push('/')
+        successMessage.value = 'Login successful! Redirecting...'
+        setTimeout(() => {
+          router.push('/')
+        }, 1000)
       } catch (error) {
         errors.value.general = error.message || 'Login failed. Please try again.'
       } finally {
@@ -282,23 +353,25 @@ export default {
       registerErrors.value = {}
       
       try {
+        console.log('userStore:', userStore)
+        console.log('userStore.register:', userStore.register)
+        
         await userStore.register({
+          firstName: registerForm.value.firstName,
+          lastName: registerForm.value.lastName,
           username: registerForm.value.username,
           email: registerForm.value.email,
-          password: registerForm.value.password
+          password: registerForm.value.password,
+          role: registerForm.value.role
         })
         
-        // Close modal and show success
+        // Close modal
         registerModalInstance.value?.hide()
         
-        // Auto login after successful registration
-        await userStore.login({
-          username: registerForm.value.username,
-          password: registerForm.value.password
-        })
-        
+        // Registration automatically logs the user in via the store
         router.push('/')
       } catch (error) {
+        console.error('Registration error:', error)
         registerErrors.value.general = error.message || 'Registration failed. Please try again.'
       } finally {
         registerLoading.value = false
@@ -314,6 +387,7 @@ export default {
       registerForm,
       errors,
       registerErrors,
+      successMessage,
       handleLogin,
       handleRegister
     }

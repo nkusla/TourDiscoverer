@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const morgan = require('morgan');
 const { validateJWT, blockInternalRoutes } = require('./middleware');
@@ -8,6 +9,15 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const api = express();
+
+// CORS configuration
+api.use(cors({
+  origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 api.use(morgan('dev'));
 
 api.use(blockInternalRoutes);
