@@ -89,36 +89,6 @@
           <div class="modal-body">
             <form @submit.prevent="handleRegister">
               <div class="mb-3">
-                <label class="form-label">First Name</label>
-                <input 
-                  v-model="registerForm.firstName" 
-                  type="text" 
-                  class="form-control"
-                  :class="{ 'is-invalid': registerErrors.firstName }"
-                  required
-                  placeholder="Enter your first name"
-                />
-                <div v-if="registerErrors.firstName" class="invalid-feedback">
-                  {{ registerErrors.firstName }}
-                </div>
-              </div>
-              
-              <div class="mb-3">
-                <label class="form-label">Last Name</label>
-                <input 
-                  v-model="registerForm.lastName" 
-                  type="text" 
-                  class="form-control"
-                  :class="{ 'is-invalid': registerErrors.lastName }"
-                  required
-                  placeholder="Enter your last name"
-                />
-                <div v-if="registerErrors.lastName" class="invalid-feedback">
-                  {{ registerErrors.lastName }}
-                </div>
-              </div>
-              
-              <div class="mb-3">
                 <label class="form-label">Username</label>
                 <input 
                   v-model="registerForm.username" 
@@ -246,8 +216,6 @@ export default {
     })
     
     const registerForm = ref({
-      firstName: '',
-      lastName: '',
       username: '',
       email: '',
       password: '',
@@ -288,14 +256,6 @@ export default {
     
     const validateRegisterForm = () => {
       registerErrors.value = {}
-      
-      if (!registerForm.value.firstName.trim()) {
-        registerErrors.value.firstName = 'First name is required'
-      }
-      
-      if (!registerForm.value.lastName.trim()) {
-        registerErrors.value.lastName = 'Last name is required'
-      }
       
       if (!registerForm.value.username.trim()) {
         registerErrors.value.username = 'Username is required'
@@ -357,8 +317,6 @@ export default {
         console.log('userStore.register:', userStore.register)
         
         await userStore.register({
-          firstName: registerForm.value.firstName,
-          lastName: registerForm.value.lastName,
           username: registerForm.value.username,
           email: registerForm.value.email,
           password: registerForm.value.password,

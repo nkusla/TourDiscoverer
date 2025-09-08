@@ -26,21 +26,16 @@
           <li class="nav-item" v-if="!isAuthenticated">
             <router-link class="nav-link" to="/login">Login</router-link>
           </li>
-          <li class="nav-item dropdown" v-else>
-            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-              <i class="fas fa-user me-1"></i>{{ userStore.username }}
-              <span class="badge bg-light text-dark ms-1">{{ userStore.user?.role }}</span>
-            </a>
-            <ul class="dropdown-menu">
-              <li><h6 class="dropdown-header">{{ userStore.user?.email }}</h6></li>
-              <li><hr class="dropdown-divider"></li>
-              <li><router-link class="dropdown-item" to="/profile">
-                <i class="fas fa-user me-2"></i>Profile
-              </router-link></li>
-              <li><a class="dropdown-item" href="#" @click="logout">
-                <i class="fas fa-sign-out-alt me-2"></i>Logout
-              </a></li>
-            </ul>
+          <li class="nav-item" v-if="isAuthenticated">
+            <div class="dropdown-simple">
+              <button class="btn btn-outline-light" @click="toggleDropdown">
+                {{ userStore.user?.username || 'User' }} ▼
+              </button>
+              <div v-if="showDropdown" class="dropdown-content">
+                <router-link to="/profile" @click="showDropdown = false">Edit Profile</router-link>
+                <button @click="logout">Logout</button>
+              </div>
+            </div>
           </li>
         </ul>
       </div>
@@ -49,7 +44,7 @@
 </template>
 
 <script>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
 
@@ -58,10 +53,20 @@ export default {
   setup() {
     const router = useRouter()
     const userStore = useUserStore()
+    const showDropdown = ref(false)
     
-    const isAuthenticated = computed(() => userStore.isAuthenticated)
+    const isAuthenticated = computed(() => {
+      return userStore.isAuthenticated
+    })
+    
+    const toggleDropdown = () => {
+      console.log('Dropdown clicked! Current state:', showDropdown.value)
+      showDropdown.value = !showDropdown.value
+      console.log('New state:', showDropdown.value)
+    }
     
     const logout = () => {
+      showDropdown.value = false
       userStore.logout()
       router.push('/login')
     }
@@ -69,8 +74,47 @@ export default {
     return {
       userStore,
       isAuthenticated,
+      showDropdown,
+      toggleDropdown,
       logout
     }
   }
 }
 </script>
+
+<style scoped>
+.dropdown-simple {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-content {
+  position: absolute;
+  right: 0;
+  background-color: white;
+  min-width: 160px;
+  box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+  z-index: 1000;
+  border-radius: 4px;
+  padding: 8px 0;
+  margin-top: 4px;
+}
+
+.dropdown-content a,
+.dropdown-content button {
+  color: black;
+  padding: 8px 16px;
+  text-decoration: none;
+  display: block;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dropdown-content a:hover,
+.dropdown-content button:hover {
+  background-color: #f1f1f1;
+}
+</style>

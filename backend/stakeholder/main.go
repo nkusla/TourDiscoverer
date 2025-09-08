@@ -19,7 +19,7 @@ func main() {
 	handler := &StakeholderHandler{service: service, validator: validator}
 
 	// Public routes
-	r.HandleFunc("/stakeholder", handler.CreateStakeholder).Methods(http.MethodPost)
+	r.HandleFunc("/", handler.CreateStakeholder).Methods(http.MethodPost)
 	
 	// Protected routes (require JWT validation from API gateway)
 	r.HandleFunc("/profile", handler.GetProfile).Methods(http.MethodGet)

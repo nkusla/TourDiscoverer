@@ -25,21 +25,6 @@
               
               <!-- Profile View -->
               <div v-else-if="!editing" class="profile-view">
-                <!-- Profile Picture Display -->
-                <div v-if="fullProfile?.profile_picture" class="row mb-3">
-                  <div class="col-sm-3">
-                    <strong>Profile Picture:</strong>
-                  </div>
-                  <div class="col-sm-9">
-                    <img 
-                      :src="fullProfile.profile_picture" 
-                      alt="Profile Picture" 
-                      class="img-thumbnail"
-                      style="max-width: 200px; max-height: 200px; object-fit: cover;"
-                    />
-                  </div>
-                </div>
-                
                 <div class="row mb-3">
                   <div class="col-sm-3">
                     <strong>Name:</strong>
@@ -122,28 +107,6 @@
                   </div>
                   
                   <div class="mb-3">
-                    <label class="form-label">Profile Picture</label>
-                    <input 
-                      ref="fileInput"
-                      type="file" 
-                      class="form-control"
-                      accept="image/*"
-                      @change="handleFileChange"
-                    />
-                    <div class="form-text">Select an image file (JPEG, PNG, GIF, WebP)</div>
-                    
-                    <!-- Preview current or selected image -->
-                    <div v-if="imagePreview || fullProfile?.profile_picture" class="mt-2">
-                      <img 
-                        :src="imagePreview || fullProfile?.profile_picture" 
-                        alt="Profile Preview" 
-                        class="img-thumbnail"
-                        style="max-width: 150px; max-height: 150px; object-fit: cover;"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div class="mb-3">
                     <label class="form-label">Biography</label>
                     <textarea 
                       v-model="editForm.biography" 
@@ -207,9 +170,6 @@ export default {
     const updateError = ref('')
     const updateSuccess = ref(false)
     const fullProfile = ref(null)
-    const selectedFile = ref(null)
-    const imagePreview = ref('')
-    const fileInput = ref(null)
     
     const user = computed(() => userStore.user)
     const roleBadgeClass = computed(() => {
@@ -251,41 +211,15 @@ export default {
         biography: fullProfile.value?.biography || '',
         motto: fullProfile.value?.motto || ''
       }
-      selectedFile.value = null
-      imagePreview.value = ''
       editing.value = true
       updateError.value = ''
       updateSuccess.value = false
     }
     
-    const handleFileChange = (event) => {
-      const file = event.target.files[0]
-      if (file) {
-        selectedFile.value = file
-        
-        // Create preview
-        const reader = new FileReader()
-        reader.onload = (e) => {
-          imagePreview.value = e.target.result
-        }
-        reader.readAsDataURL(file)
-      } else {
-        selectedFile.value = null
-        imagePreview.value = ''
-      }
-    }
-    
     const cancelEditing = () => {
       editing.value = false
-      selectedFile.value = null
-      imagePreview.value = ''
       updateError.value = ''
       updateSuccess.value = false
-      
-      // Reset file input
-      if (fileInput.value) {
-        fileInput.value.value = ''
-      }
     }
     
     const saveProfile = async () => {
@@ -294,17 +228,10 @@ export default {
       updateSuccess.value = false
       
       try {
-        await userStore.updateUserProfile(editForm.value, selectedFile.value)
+        await userStore.updateUserProfile(editForm.value)
         await fetchProfile() // Refresh the profile data
         updateSuccess.value = true
         editing.value = false
-        selectedFile.value = null
-        imagePreview.value = ''
-        
-        // Reset file input
-        if (fileInput.value) {
-          fileInput.value.value = ''
-        }
       } catch (error) {
         updateError.value = error.message || 'Failed to update profile'
       } finally {
@@ -329,13 +256,9 @@ export default {
       fullProfile,
       roleBadgeClass,
       editForm,
-      selectedFile,
-      imagePreview,
-      fileInput,
       startEditing,
       cancelEditing,
       saveProfile,
-      handleFileChange,
       confirmLogout
     }
   }

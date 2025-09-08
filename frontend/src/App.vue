@@ -8,12 +8,22 @@
 </template>
 
 <script>
+import { onMounted } from 'vue'
 import Navbar from './components/Navbar.vue'
+import { useUserStore } from './stores/user'
 
 export default {
   name: 'App',
   components: {
     Navbar
+  },
+  setup() {
+    const userStore = useUserStore()
+    
+    onMounted(() => {
+      // Load user from localStorage on app startup
+      userStore.loadUserFromStorage()
+    })
   }
 }
 </script>

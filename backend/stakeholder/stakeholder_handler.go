@@ -1,8 +1,13 @@
 package main
 
 import (
+	"encoding/base64"
 	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
+	"path/filepath"
+	"strings"
 
 	"github.com/go-playground/validator/v10"
 )
@@ -77,9 +82,68 @@ func (h *StakeholderHandler) UpdateProfile(w http.ResponseWriter, r *http.Reques
 	}
 
 	var req UpdateProfileRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid JSON", http.StatusBadRequest)
-		return
+	var profilePictureData string
+
+	// Check if it's multipart form data (file upload) or JSON
+	contentType := r.Header.Get("Content-Type")
+	if strings.Contains(contentType, "multipart/form-data") {
+		// Handle file upload
+		err := r.ParseMultipartForm(10 << 20) // 10MB max
+		if err != nil {
+			http.Error(w, "Error parsing multipart form", http.StatusBadRequest)
+			return
+		}
+
+		// Get form values
+		req.FirstName = r.FormValue("first_name")
+		req.LastName = r.FormValue("last_name")
+		req.Biography = r.FormValue("biography")
+		req.Motto = r.FormValue("motto")
+
+		// Handle file upload if present
+		file, header, err := r.FormFile("profile_picture")
+		if err == nil {
+			defer file.Close()
+			
+			// Read file content
+			fileBytes, err := io.ReadAll(file)
+			if err != nil {
+				http.Error(w, "Error reading uploaded file", http.StatusInternalServerError)
+				return
+			}
+			
+			// Convert to base64 with data URL format
+			mimeType := header.Header.Get("Content-Type")
+			if mimeType == "" {
+				// Try to detect MIME type from file extension
+				ext := strings.ToLower(filepath.Ext(header.Filename))
+				switch ext {
+				case ".jpg", ".jpeg":
+					mimeType = "image/jpeg"
+				case ".png":
+					mimeType = "image/png"
+				case ".gif":
+					mimeType = "image/gif"
+				case ".webp":
+					mimeType = "image/webp"
+				default:
+					mimeType = "image/jpeg" // default
+				}
+			}
+			
+			profilePictureData = fmt.Sprintf("data:%s;base64,%s", mimeType, base64.StdEncoding.EncodeToString(fileBytes))
+		} else {
+			// No file uploaded, keep existing profile picture
+			profilePictureData = r.FormValue("existing_profile_picture")
+		}
+		
+		req.ProfilePicture = profilePictureData
+	} else {
+		// Handle JSON request (backward compatibility)
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "Invalid JSON", http.StatusBadRequest)
+			return
+		}
 	}
 
 	stakeholder, err := h.service.UpdateStakeholderProfile(
