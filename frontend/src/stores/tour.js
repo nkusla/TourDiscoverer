@@ -109,7 +109,7 @@ export const useTourStore = defineStore('tour', () => {
   // Key point management
   const addKeyPoint = async (tourId, keyPointData) => {
     try {
-      const response = await api.post(`/api/tours/${tourId}/keypoints`, keyPointData)
+      const response = await api.post(`/api/tours/${tourId}/keypoint`, keyPointData)
       return response.data
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to add key point')
@@ -118,7 +118,7 @@ export const useTourStore = defineStore('tour', () => {
   
   const updateKeyPoint = async (tourId, keyPointId, keyPointData) => {
     try {
-      const response = await api.put(`/api/tours/${tourId}/keypoints/${keyPointId}`, keyPointData)
+      const response = await api.put(`/api/tours/${tourId}/keypoint/${keyPointId}`, keyPointData)
       return response.data
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to update key point')
@@ -127,7 +127,7 @@ export const useTourStore = defineStore('tour', () => {
   
   const deleteKeyPoint = async (tourId, keyPointId) => {
     try {
-      await api.delete(`/api/tours/${tourId}/keypoints/${keyPointId}`)
+      await api.delete(`/api/tours/${tourId}/keypoint/${keyPointId}`)
       return true
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to delete key point')

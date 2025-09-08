@@ -354,19 +354,45 @@ export default {
     
     const saveTour = async () => {
       try {
-        // Prepare tour data
-        const tourData = {
-          ...tour.value,
-          key_points: tour.value.key_points.map((point, index) => ({
-            ...point,
-            order: point.order || index
-          }))
-        }
-        
         if (isEditing.value) {
+          // For editing, send all data including key points as before
+          const tourData = {
+            ...tour.value,
+            key_points: tour.value.key_points.map((point, index) => ({
+              ...point,
+              order: point.order || index
+            }))
+          }
           await tourStore.updateTour(props.id, tourData)
         } else {
-          await tourStore.createTour(tourData)
+          // For creation, create tour first without key points
+          const tourData = {
+            name: tour.value.name,
+            description: tour.value.description,
+            difficulty: tour.value.difficulty,
+            tags: tour.value.tags,
+            price: tour.value.price || 0
+          }
+          
+          // Create the tour
+          const createdTour = await tourStore.createTour(tourData)
+          
+          // Then add key points one by one
+          if (tour.value.key_points.length > 0) {
+            for (let i = 0; i < tour.value.key_points.length; i++) {
+              const keyPoint = tour.value.key_points[i]
+              const keyPointData = {
+                name: keyPoint.name,
+                description: keyPoint.description || '',
+                latitude: keyPoint.latitude,
+                longitude: keyPoint.longitude,
+                image_url: keyPoint.image_url || '',
+                order: keyPoint.order || i
+              }
+              
+              await tourStore.addKeyPoint(createdTour.id, keyPointData)
+            }
+          }
         }
         
         // Redirect to tours list
