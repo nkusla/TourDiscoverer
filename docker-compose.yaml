@@ -2,16 +2,18 @@ services:
   api-gateway:
     profiles: ["service"]
     build:
-      context: ./api-gateway
+      context: ./backend/api-gateway
       dockerfile: Dockerfile
     image: td-api-gateway
     container_name: td-api-gateway
     hostname: ${API_GATEWAY_HOST}
     environment:
-      - PORT=${API_GATEWAY_PORT}
+      - API_GATEWAY_PORT=${API_GATEWAY_PORT}
       - AUTH_SERVICE_URL=http://${AUTH_SERVICE_HOST}:${AUTH_SERVICE_PORT}
+      - STAKEHOLDER_SERVICE_URL=http://${STAKEHOLDER_SERVICE_HOST}:${STAKEHOLDER_SERVICE_PORT}
       - TOUR_SERVICE_URL=http://${TOUR_SERVICE_HOST}:${TOUR_SERVICE_PORT}
       - BLOG_SERVICE_URL=http://${BLOG_SERVICE_HOST}:${BLOG_SERVICE_PORT}
+      - REVIEW_SERVICE_URL=http://${REVIEW_SERVICE_HOST}:${REVIEW_SERVICE_PORT}
       - JWT_SECRET=${JWT_SECRET}
     ports:
       - "${API_GATEWAY_PORT}:${API_GATEWAY_PORT}"
@@ -82,10 +84,44 @@ services:
     ports:
       - "${BLOG_DB_EXT_PORT}:27017"
 
+  stakeholder-db:
+    profiles: ["db"]
+    image: postgres:16-alpine
+    container_name: td-stakeholder-db
+    hostname: ${STAKEHOLDER_DB_HOST}
+    environment:
+      - POSTGRES_DB=${STAKEHOLDER_DB_NAME}
+      - POSTGRES_USER=${STAKEHOLDER_DB_USER}
+      - POSTGRES_PASSWORD=${STAKEHOLDER_DB_PASSWORD}
+    ports:
+      - "${STAKEHOLDER_DB_EXT_PORT}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${STAKEHOLDER_DB_USER} -d ${STAKEHOLDER_DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  review-db:
+    profiles: ["db"]
+    image: postgres:16-alpine
+    container_name: td-review-db
+    hostname: ${REVIEW_DB_HOST}
+    environment:
+      - POSTGRES_DB=${REVIEW_DB_NAME}
+      - POSTGRES_USER=${REVIEW_DB_USER}
+      - POSTGRES_PASSWORD=${REVIEW_DB_PASSWORD}
+    ports:
+      - "${REVIEW_DB_EXT_PORT}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${REVIEW_DB_USER} -d ${REVIEW_DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   auth-service:
     profiles: ["service"]
     build:
-      context: ./auth
+      context: ./backend/auth
       dockerfile: Dockerfile
     image: td-auth-service
     container_name: td-auth-service
@@ -100,13 +136,14 @@ services:
       - AUTH_DB_USER=${AUTH_DB_USER}
       - AUTH_DB_PASSWORD=${AUTH_DB_PASSWORD}
       - FOLLOWER_SERVICE_URL=http://${FOLLOWER_SERVICE_HOST}:${FOLLOWER_SERVICE_PORT}
+      - STAKEHOLDER_SERVICE_URL=http://${STAKEHOLDER_SERVICE_HOST}:${STAKEHOLDER_SERVICE_PORT}
     ports:
       - "${AUTH_SERVICE_PORT}:${AUTH_SERVICE_PORT}"
 
   follower-service:
     profiles: ["service"]
     build:
-      context: ./follower
+      context: ./backend/follower
       dockerfile: Dockerfile
     image: td-follower-service
     container_name: td-follower-service
@@ -120,10 +157,28 @@ services:
     ports:
       - "${FOLLOWER_SERVICE_PORT}:${FOLLOWER_SERVICE_PORT}"
 
+  stakeholder-service:
+    profiles: ["service"]
+    build:
+      context: ./backend/stakeholder
+      dockerfile: Dockerfile
+    image: td-stakeholder-service
+    container_name: td-stakeholder-service
+    hostname: ${STAKEHOLDER_SERVICE_HOST}
+    environment:
+      - PORT=${STAKEHOLDER_SERVICE_PORT}
+      - STAKEHOLDER_DB_HOST=${STAKEHOLDER_DB_HOST}
+      - STAKEHOLDER_DB_PORT=5432
+      - STAKEHOLDER_DB_NAME=${STAKEHOLDER_DB_NAME}
+      - STAKEHOLDER_DB_USER=${STAKEHOLDER_DB_USER}
+      - STAKEHOLDER_DB_PASSWORD=${STAKEHOLDER_DB_PASSWORD}
+    ports:
+      - "${STAKEHOLDER_SERVICE_PORT}:${STAKEHOLDER_SERVICE_PORT}"
+
   tour-service:
     profiles: ["service"]
     build:
-      context: ./tour
+      context: ./backend/tour
       dockerfile: Dockerfile
     image: td-tour-service
     container_name: td-tour-service
@@ -142,7 +197,7 @@ services:
   blog-service:
     profiles: ["service"]
     build:
-      context: ./blog
+      context: ./backend/blog
       dockerfile: Dockerfile
     image: td-blog-service
     container_name: td-blog-service
@@ -157,10 +212,44 @@ services:
     ports:
       - "${BLOG_SERVICE_PORT}:${BLOG_SERVICE_PORT}"
 
+  review-service:
+    profiles: ["service"]
+    build:
+      context: ./backend/review
+      dockerfile: Dockerfile
+    image: td-review-service
+    container_name: td-review-service
+    hostname: ${REVIEW_SERVICE_HOST}
+    environment:
+      - PORT=${REVIEW_SERVICE_PORT}
+      - REVIEW_DB_HOST=${REVIEW_DB_HOST}
+      - REVIEW_DB_PORT=5432
+      - REVIEW_DB_NAME=${REVIEW_DB_NAME}
+      - REVIEW_DB_USER=${REVIEW_DB_USER}
+      - REVIEW_DB_PASSWORD=${REVIEW_DB_PASSWORD}
+    ports:
+      - "${REVIEW_SERVICE_PORT}:${REVIEW_SERVICE_PORT}"
+
+  frontend:
+    profiles: ["service"]
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: td-frontend
+    container_name: td-frontend
+    hostname: ${FRONTEND_HOST}
+    environment:
+      - NODE_ENV=production
+      - VITE_API_URL=http://${API_GATEWAY_HOST}:${API_GATEWAY_PORT}
+    ports:
+      - "${FRONTEND_PORT}:3000"
+    depends_on:
+      - api-gateway
+
   seed:
     profiles: ["service"]
     build:
-      context: ./seed
+      context: ./backend/seed
       dockerfile: Dockerfile
     image: td-seed
     container_name: td-seed

@@ -1,13 +1,23 @@
 const express = require('express');
+const cors = require('cors');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const morgan = require('morgan');
 const { validateJWT, blockInternalRoutes } = require('./middleware');
-const { AUTH_SERVICE_URL, TOUR_SERVICE_URL, BLOG_SERVICE_URL } = require('./constants');
+const { AUTH_SERVICE_URL, STAKEHOLDER_SERVICE_URL, TOUR_SERVICE_URL, BLOG_SERVICE_URL, REVIEW_SERVICE_URL } = require('./constants');
 
 const dotenv = require('dotenv');
 dotenv.config();
 
 const api = express();
+
+// CORS configuration
+api.use(cors({
+  origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 api.use(morgan('dev'));
 
 api.use(blockInternalRoutes);
@@ -36,6 +46,32 @@ api.use('/api/auth', validateJWT, createProxyMiddleware({
   }
 }));
 
+// Protected stakeholder profile routes (must come first for specificity)
+api.get('/api/stakeholder/profile', validateJWT, createProxyMiddleware({
+  target: STAKEHOLDER_SERVICE_URL,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api/stakeholder/profile': '/profile',
+  }
+}));
+
+api.put('/api/stakeholder/profile', validateJWT, createProxyMiddleware({
+  target: STAKEHOLDER_SERVICE_URL,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api/stakeholder/profile': '/profile',
+  }
+}));
+
+// Public stakeholder routes (for creating profiles)
+api.use('/api/stakeholder', createProxyMiddleware({
+  target: STAKEHOLDER_SERVICE_URL,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api/stakeholder': '',
+  }
+}));
+
 api.use('/api/tours', validateJWT, createProxyMiddleware({
   target: TOUR_SERVICE_URL,
   changeOrigin: true,
@@ -49,6 +85,14 @@ api.use('/api/blogs', validateJWT, createProxyMiddleware({
   changeOrigin: true,
   pathRewrite: {
     '^/api/blogs': '',
+  },
+}));
+
+api.use('/api/reviews', validateJWT, createProxyMiddleware({
+  target: REVIEW_SERVICE_URL,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api/reviews': '',
   },
 }));
 

@@ -42,6 +42,16 @@ func (s *UserService) RegisterUser(req RegisterRequest) error {
 		log.Fatalf("%v", err)
 	}
 
+	// Automatically create stakeholder profile for non-admin users
+	if req.Role != RoleAdmin {
+		err = s.registerUserInStakeholderService(user.Username)
+		if err != nil {
+			log.Printf("Failed to create stakeholder profile for user %s: %v", user.Username, err)
+			// Note: We don't fail the registration if stakeholder creation fails
+			// This allows the auth service to continue working even if stakeholder service is down
+		}
+	}
+
 	return nil
 }
 
@@ -73,6 +83,39 @@ func (s *UserService) registerUserInFollowerService(username string) error {
 
 	if resp.StatusCode != http.StatusCreated {
 		return fmt.Errorf("failed to register user in follower service, status code: %d", resp.StatusCode)
+	}
+
+	return nil
+}
+
+func (s *UserService) registerUserInStakeholderService(username string) error {
+	stakeholderServiceURL := os.Getenv("STAKEHOLDER_SERVICE_URL")
+	if stakeholderServiceURL == "" {
+		return fmt.Errorf("stakeholder service URL is not configured")
+	}
+
+	payload := map[string]string{
+		"username": username,
+	}
+
+	jsonData, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	resp, err := http.Post(
+		stakeholderServiceURL+"/internal/user",
+		"application/json",
+		bytes.NewBuffer(jsonData),
+	)
+
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated {
+		return fmt.Errorf("failed to register user in stakeholder service, status code: %d", resp.StatusCode)
 	}
 
 	return nil
