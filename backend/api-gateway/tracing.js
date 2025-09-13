@@ -6,42 +6,41 @@ const { getNodeAutoInstrumentations } = require('@opentelemetry/auto-instrumenta
 const { trace } = require('@opentelemetry/api');
 const { JAEGER_SERVICE_URL } = require('./constants');
 
-let tp;
+class TracingManager {
+	static tp;
 
-function initTracer() {
-	const url = JAEGER_SERVICE_URL;
+	static initTracer() {
+		const url = JAEGER_SERVICE_URL;
 
-	if (!url || url.length === 0) {
-		console.error('JAEGER_SERVICE_URL environment variable is required for tracing');
-		process.exit(1);
+		if (!url || url.length === 0) {
+			console.error('JAEGER_SERVICE_URL environment variable is required for tracing');
+			process.exit(1);
+		}
+
+		return this._initJaegerTracer(url);
 	}
 
-	return initJaegerTracer(url);
+	static _initJaegerTracer(url) {
+		console.log(`Initializing tracing to jaeger at ${url}`);
+
+		const sdk = new NodeSDK({
+			resource: new Resource({
+				[ATTR_SERVICE_NAME]: 'api-gateway',
+			}),
+			traceExporter: new OTLPTraceExporter({
+				url: url,
+			}),
+			instrumentations: [getNodeAutoInstrumentations()],
+		});
+
+		sdk.start();
+		this.tp = trace.getTracerProvider();
+		return this.tp;
+	}
+
+	static getTracerProvider() {
+		return this.tp;
+	}
 }
 
-function initJaegerTracer(url) {
-	console.log(`Initializing tracing to jaeger at ${url}`);
-
-	const sdk = new NodeSDK({
-		resource: new Resource({
-			[ATTR_SERVICE_NAME]: 'api-gateway',
-		}),
-		traceExporter: new OTLPTraceExporter({
-			url: url,
-		}),
-		instrumentations: [getNodeAutoInstrumentations()],
-	});
-
-	sdk.start();
-	tp = trace.getTracerProvider();
-	return tp;
-}
-
-function getTracerProvider() {
-	return tp;
-}
-
-module.exports = {
-	initTracer,
-	getTracerProvider
-};
+module.exports = TracingManager;

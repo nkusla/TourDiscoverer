@@ -1,4 +1,4 @@
-const { initTracer } = require('./tracing');
+const TracingManager = require('./tracing');
 const express = require('express');
 const cors = require('cors');
 const { createProxyMiddleware } = require('http-proxy-middleware');
@@ -6,7 +6,7 @@ const morgan = require('morgan');
 const { validateJWT, blockInternalRoutes, tracingMiddleware } = require('./middleware');
 const { AUTH_SERVICE_URL, STAKEHOLDER_SERVICE_URL, TOUR_SERVICE_URL, BLOG_SERVICE_URL, REVIEW_SERVICE_URL } = require('./constants');
 
-initTracer();
+TracingManager.initTracer();
 
 const dotenv = require('dotenv');
 dotenv.config();
