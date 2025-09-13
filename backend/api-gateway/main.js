@@ -1,9 +1,12 @@
+const { initTracer } = require('./tracing');
 const express = require('express');
 const cors = require('cors');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const morgan = require('morgan');
-const { validateJWT, blockInternalRoutes } = require('./middleware');
+const { validateJWT, blockInternalRoutes, tracingMiddleware } = require('./middleware');
 const { AUTH_SERVICE_URL, STAKEHOLDER_SERVICE_URL, TOUR_SERVICE_URL, BLOG_SERVICE_URL, REVIEW_SERVICE_URL } = require('./constants');
+
+initTracer();
 
 const dotenv = require('dotenv');
 dotenv.config();
@@ -20,6 +23,10 @@ api.use(cors({
 
 api.use(morgan('dev'));
 
+// Add tracing middleware
+api.use(tracingMiddleware);
+
+// Add filtering middleware
 api.use(blockInternalRoutes);
 
 api.post('/api/auth/login', createProxyMiddleware({

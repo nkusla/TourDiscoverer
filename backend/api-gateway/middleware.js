@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const { trace, context, SpanStatusCode } = require('@opentelemetry/api');
 const { JWT_SECRET } = require('./constants');
 
 function validateJWT(req, res, next) {
@@ -41,7 +42,50 @@ function blockInternalRoutes(req, res, next) {
   next();
 }
 
+function tracingMiddleware(req, res, next) {
+  const tracer = trace.getTracer('api-gateway');
+
+  // Create new trace/span
+  const span = tracer.startSpan(`${req.method} ${req.path}`);
+
+  // Add span to request context
+  req.span = span;
+  req.traceContext = trace.setSpan(context.active(), span);
+
+  // Add event
+  span.addEvent('HTTP request received');
+  span.setAttributes({
+    'http.method': req.method,
+    'http.url': req.originalUrl,
+    'http.user_agent': req.get('User-Agent') || '',
+    'user.name': req.user?.username || 'anonymous'
+  });
+
+  // End span when response finishes
+  res.on('finish', () => {
+    span.setAttributes({
+      'http.status_code': res.statusCode
+    });
+
+    if (res.statusCode >= 400) {
+      span.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: `HTTP ${res.statusCode}`
+      });
+    } else {
+      span.setStatus({
+        code: SpanStatusCode.OK
+      });
+    }
+
+    span.end();
+  });
+
+  next();
+}
+
 module.exports = {
   validateJWT,
-  blockInternalRoutes
+  blockInternalRoutes,
+  tracingMiddleware
 };

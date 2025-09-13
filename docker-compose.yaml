@@ -15,8 +15,26 @@ services:
       - BLOG_SERVICE_URL=http://${BLOG_SERVICE_HOST}:${BLOG_SERVICE_PORT}
       - REVIEW_SERVICE_URL=http://${REVIEW_SERVICE_HOST}:${REVIEW_SERVICE_PORT}
       - JWT_SECRET=${JWT_SECRET}
+      - JAEGER_SERVICE_URL=http://${JAEGER_HOST}:4318/v1/traces
+    depends_on:
+      - jaeger
     ports:
       - "${API_GATEWAY_PORT}:${API_GATEWAY_PORT}"
+
+  jaeger:
+    profiles: ["service"]
+    image: jaegertracing/all-in-one:1.73.0
+    container_name: td-jaeger
+    hostname: ${JAEGER_HOST}
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    ports:
+      - "${JAEGER_UI_EXT_PORT}:16686" # Jaeger UI
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:16686/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   auth-db:
     profiles: ["db"]
