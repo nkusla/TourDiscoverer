@@ -4,11 +4,11 @@
       <router-link class="navbar-brand" to="/">
         <strong>Tour Discoverer</strong>
       </router-link>
-      
+
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
         <span class="navbar-toggler-icon"></span>
       </button>
-      
+
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav me-auto">
           <li class="nav-item">
@@ -20,8 +20,11 @@
           <li class="nav-item" v-if="isAuthenticated">
             <router-link class="nav-link" to="/tour/create">Create Tour</router-link>
           </li>
+          <li class="nav-item" v-if="isAdmin">
+            <router-link class="nav-link" to="/users">Users</router-link>
+          </li>
         </ul>
-        
+
         <ul class="navbar-nav">
           <li class="nav-item" v-if="!isAuthenticated">
             <router-link class="nav-link" to="/login">Login</router-link>
@@ -54,26 +57,31 @@ export default {
     const router = useRouter()
     const userStore = useUserStore()
     const showDropdown = ref(false)
-    
+
     const isAuthenticated = computed(() => {
       return userStore.isAuthenticated
     })
-    
+
+    const isAdmin = computed(() => {
+      return userStore.isAdmin
+    })
+
     const toggleDropdown = () => {
       console.log('Dropdown clicked! Current state:', showDropdown.value)
       showDropdown.value = !showDropdown.value
       console.log('New state:', showDropdown.value)
     }
-    
+
     const logout = () => {
       showDropdown.value = false
       userStore.logout()
       router.push('/login')
     }
-    
+
     return {
       userStore,
       isAuthenticated,
+      isAdmin,
       showDropdown,
       toggleDropdown,
       logout

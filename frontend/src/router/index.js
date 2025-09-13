@@ -5,6 +5,7 @@ import Tours from '../views/Tours.vue'
 import TourEditor from '../views/TourEditor.vue'
 import Login from '../views/Login.vue'
 import Profile from '../views/Profile.vue'
+import Users from '../views/Users.vue'
 
 const routes = [
   {
@@ -41,6 +42,12 @@ const routes = [
     name: 'Profile',
     component: Profile,
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/users',
+    name: 'Users',
+    component: Users,
+    meta: { requiresAuth: true, requiresAdmin: true }
   }
 ]
 
@@ -52,19 +59,25 @@ const router = createRouter({
 // Navigation guards
 router.beforeEach((to, from, next) => {
   const userStore = useUserStore()
-  
+
   // Check if route requires authentication
   if (to.meta.requiresAuth && !userStore.isAuthenticated) {
     next('/login')
     return
   }
-  
+
+  // Check if route requires admin privileges
+  if (to.meta.requiresAdmin && !userStore.isAdmin) {
+    next('/')
+    return
+  }
+
   // Check if route requires guest (like login page)
   if (to.meta.requiresGuest && userStore.isAuthenticated) {
     next('/')
     return
   }
-  
+
   next()
 })
 

@@ -9,13 +9,13 @@
                 <h3>Login</h3>
                 <p class="text-muted">Sign in to your account</p>
               </div>
-              
+
               <form @submit.prevent="handleLogin">
                 <div class="mb-3">
                   <label class="form-label">Username</label>
-                  <input 
-                    v-model="loginForm.username" 
-                    type="text" 
+                  <input
+                    v-model="loginForm.username"
+                    type="text"
                     class="form-control"
                     :class="{ 'is-invalid': errors.username }"
                     required
@@ -25,12 +25,12 @@
                     {{ errors.username }}
                   </div>
                 </div>
-                
+
                 <div class="mb-3">
                   <label class="form-label">Password</label>
-                  <input 
-                    v-model="loginForm.password" 
-                    type="password" 
+                  <input
+                    v-model="loginForm.password"
+                    type="password"
                     class="form-control"
                     :class="{ 'is-invalid': errors.password }"
                     required
@@ -40,18 +40,19 @@
                     {{ errors.password }}
                   </div>
                 </div>
-                
+
                 <div v-if="successMessage" class="alert alert-success" role="alert">
                   <i class="fas fa-check-circle me-2"></i>{{ successMessage }}
                 </div>
-                
-                <div v-if="errors.general" class="alert alert-danger" role="alert">
-                  {{ errors.general }}
+
+                <div v-if="errors.general" class="alert alert-danger alert-dismissible" role="alert">
+                  <i class="fas fa-exclamation-triangle me-2"></i>{{ errors.general }}
+                  <button type="button" class="btn-close" @click="clearGeneralError" aria-label="Close"></button>
                 </div>
-                
+
                 <div class="d-grid">
-                  <button 
-                    type="submit" 
+                  <button
+                    type="submit"
                     class="btn btn-primary"
                     :disabled="loading"
                   >
@@ -60,10 +61,10 @@
                   </button>
                 </div>
               </form>
-              
+
               <div class="text-center mt-3">
                 <p class="text-muted">
-                  Don't have an account? 
+                  Don't have an account?
                   <a href="#" @click.prevent="showRegister = true">Register here</a>
                 </p>
               </div>
@@ -72,11 +73,11 @@
         </div>
       </div>
     </div>
-    
+
     <!-- Register Modal -->
-    <div 
-      class="modal fade" 
-      id="registerModal" 
+    <div
+      class="modal fade"
+      id="registerModal"
       tabindex="-1"
       ref="registerModal"
     >
@@ -90,9 +91,9 @@
             <form @submit.prevent="handleRegister">
               <div class="mb-3">
                 <label class="form-label">Username</label>
-                <input 
-                  v-model="registerForm.username" 
-                  type="text" 
+                <input
+                  v-model="registerForm.username"
+                  type="text"
                   class="form-control"
                   :class="{ 'is-invalid': registerErrors.username }"
                   required
@@ -102,12 +103,12 @@
                   {{ registerErrors.username }}
                 </div>
               </div>
-              
+
               <div class="mb-3">
                 <label class="form-label">Email</label>
-                <input 
-                  v-model="registerForm.email" 
-                  type="email" 
+                <input
+                  v-model="registerForm.email"
+                  type="email"
                   class="form-control"
                   :class="{ 'is-invalid': registerErrors.email }"
                   required
@@ -117,12 +118,12 @@
                   {{ registerErrors.email }}
                 </div>
               </div>
-              
+
               <div class="mb-3">
                 <label class="form-label">Password</label>
-                <input 
-                  v-model="registerForm.password" 
-                  type="password" 
+                <input
+                  v-model="registerForm.password"
+                  type="password"
                   class="form-control"
                   :class="{ 'is-invalid': registerErrors.password }"
                   required
@@ -132,12 +133,12 @@
                   {{ registerErrors.password }}
                 </div>
               </div>
-              
+
               <div class="mb-3">
                 <label class="form-label">Confirm Password</label>
-                <input 
-                  v-model="registerForm.confirmPassword" 
-                  type="password" 
+                <input
+                  v-model="registerForm.confirmPassword"
+                  type="password"
                   class="form-control"
                   :class="{ 'is-invalid': registerErrors.confirmPassword }"
                   required
@@ -147,11 +148,11 @@
                   {{ registerErrors.confirmPassword }}
                 </div>
               </div>
-              
+
               <div class="mb-3">
                 <label class="form-label">Role</label>
-                <select 
-                  v-model="registerForm.role" 
+                <select
+                  v-model="registerForm.role"
                   class="form-select"
                   :class="{ 'is-invalid': registerErrors.role }"
                   required
@@ -164,7 +165,7 @@
                   {{ registerErrors.role }}
                 </div>
               </div>
-              
+
               <div v-if="registerErrors.general" class="alert alert-danger" role="alert">
                 {{ registerErrors.general }}
               </div>
@@ -174,8 +175,8 @@
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
               Cancel
             </button>
-            <button 
-              type="button" 
+            <button
+              type="button"
               class="btn btn-primary"
               @click="handleRegister"
               :disabled="registerLoading"
@@ -201,20 +202,20 @@ export default {
   setup() {
     const router = useRouter()
     const userStore = useUserStore()
-    
+
     const registerModal = ref(null)
     const registerModalInstance = ref(null)
     const showRegister = ref(false)
-    
+
     const loading = ref(false)
     const registerLoading = ref(false)
     const successMessage = ref('')
-    
+
     const loginForm = ref({
       username: '',
       password: ''
     })
-    
+
     const registerForm = ref({
       username: '',
       email: '',
@@ -222,110 +223,150 @@ export default {
       confirmPassword: '',
       role: ''
     })
-    
+
     const errors = ref({})
     const registerErrors = ref({})
-    
+
     onMounted(() => {
       // Initialize Bootstrap modal
       if (registerModal.value) {
         registerModalInstance.value = new Modal(registerModal.value)
       }
     })
-    
+
     watch(showRegister, (newValue) => {
       if (newValue && registerModalInstance.value) {
         registerModalInstance.value.show()
         showRegister.value = false
       }
     })
-    
-    const validateLoginForm = () => {
+
+
+    const clearErrors = () => {
       errors.value = {}
-      
+    }
+
+    const clearGeneralError = () => {
+      if (errors.value.general) {
+        delete errors.value.general
+        errors.value = { ...errors.value }
+      }
+    }
+
+    // Clear general error when user starts typing (with longer delay for better UX)
+    let errorClearTimeout = null
+    watch([() => loginForm.value.username, () => loginForm.value.password], () => {
+      if (errors.value.general) {
+        // Clear any existing timeout
+        if (errorClearTimeout) {
+          clearTimeout(errorClearTimeout)
+        }
+        // Set a longer delay (3 seconds) to give users time to read the error
+        errorClearTimeout = setTimeout(clearGeneralError, 3000)
+      }
+    })
+
+    const validateLoginForm = () => {
+      // Only clear field-specific errors, preserve general errors
+      const generalError = errors.value.general
+      errors.value = {}
+      if (generalError) {
+        errors.value.general = generalError
+      }
+
       if (!loginForm.value.username.trim()) {
         errors.value.username = 'Username is required'
       }
-      
+
       if (!loginForm.value.password) {
         errors.value.password = 'Password is required'
       }
-      
-      return Object.keys(errors.value).length === 0
+
+      return !errors.value.username && !errors.value.password
     }
-    
+
     const validateRegisterForm = () => {
       registerErrors.value = {}
-      
+
       if (!registerForm.value.username.trim()) {
         registerErrors.value.username = 'Username is required'
       } else if (registerForm.value.username.length < 3) {
         registerErrors.value.username = 'Username must be at least 3 characters'
       }
-      
+
       if (!registerForm.value.email.trim()) {
         registerErrors.value.email = 'Email is required'
       } else if (!/\S+@\S+\.\S+/.test(registerForm.value.email)) {
         registerErrors.value.email = 'Please enter a valid email'
       }
-      
+
       if (!registerForm.value.password) {
         registerErrors.value.password = 'Password is required'
       } else if (registerForm.value.password.length < 6) {
         registerErrors.value.password = 'Password must be at least 6 characters'
       }
-      
+
       if (registerForm.value.password !== registerForm.value.confirmPassword) {
         registerErrors.value.confirmPassword = 'Passwords do not match'
       }
-      
+
       if (!registerForm.value.role) {
         registerErrors.value.role = 'Please select a role'
       }
-      
+
       return Object.keys(registerErrors.value).length === 0
     }
-    
+
     const handleLogin = async () => {
       if (!validateLoginForm()) return
-      
+
       loading.value = true
-      errors.value = {}
+      // Clear any existing error clear timeout
+      if (errorClearTimeout) {
+        clearTimeout(errorClearTimeout)
+        errorClearTimeout = null
+      }
+      // Clear previous messages but keep form validation errors
+      errors.value = { ...errors.value }
+      delete errors.value.general
       successMessage.value = ''
-      
+
       try {
         await userStore.login(loginForm.value)
+        // Clear any previous errors on success
+        errors.value = {}
         successMessage.value = 'Login successful! Redirecting...'
         setTimeout(() => {
           router.push('/')
         }, 1000)
       } catch (error) {
+        // Set error message and make sure it persists
         errors.value.general = error.message || 'Login failed. Please try again.'
       } finally {
         loading.value = false
       }
     }
-    
+
     const handleRegister = async () => {
       if (!validateRegisterForm()) return
-      
+
       registerLoading.value = true
       registerErrors.value = {}
-      
+
       try {
         console.log('userStore:', userStore)
         console.log('userStore.register:', userStore.register)
-        
+
         await userStore.register({
           username: registerForm.value.username,
           email: registerForm.value.email,
           password: registerForm.value.password,
           role: registerForm.value.role
         })
-        
+
         // Close modal
         registerModalInstance.value?.hide()
-        
+
         // Registration automatically logs the user in via the store
         router.push('/')
       } catch (error) {
@@ -335,7 +376,7 @@ export default {
         registerLoading.value = false
       }
     }
-    
+
     return {
       registerModal,
       showRegister,
@@ -347,7 +388,9 @@ export default {
       registerErrors,
       successMessage,
       handleLogin,
-      handleRegister
+      handleRegister,
+      clearErrors,
+      clearGeneralError
     }
   }
 }
