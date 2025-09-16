@@ -14,19 +14,34 @@ func (service *TourService) CreateTour(request *CreateTourRequest, authorUsernam
 		return nil, errors.New("invalid difficulty level")
 	}
 
+	// Convert key points from request to model
+	var keyPoints []KeyPoint
+	for i, kpRequest := range request.KeyPoints {
+		keyPoint := KeyPoint{
+			Name:        kpRequest.Name,
+			Description: kpRequest.Description,
+			Latitude:    kpRequest.Latitude,
+			Longitude:   kpRequest.Longitude,
+			ImageURL:    kpRequest.ImageURL,
+			Order:       i, // Use index as order
+		}
+		keyPoints = append(keyPoints, keyPoint)
+	}
+
 	tour := &Tour{
 		Name:             request.Name,
 		Description:      request.Description,
 		Difficulty:       request.Difficulty,
 		Tags:             strings.TrimSpace(request.Tags),
 		Status:           TourStatusDraft,
-		Price:            0,
+		Price:            0, // Always 0 for draft
 		AuthorUsername:   authorUsername,
 		TransportDetails: []Transport{},
-		Distance:         0,
-		KeyPoints:        []KeyPoint{},
+		Distance:         request.Distance,
+		KeyPoints:        keyPoints, // GORM will handle the association
 	}
 
+	// Create tour with all associations in one transaction
 	err := service.repository.CreateTour(tour)
 	if err != nil {
 		return nil, err

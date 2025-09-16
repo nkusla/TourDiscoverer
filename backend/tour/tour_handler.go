@@ -51,6 +51,8 @@ func (h *TourHandler) CreateTour(w http.ResponseWriter, r *http.Request) {
 		Tags:           tour.Tags,
 		Status:         tour.Status,
 		Price:          tour.Price,
+		Distance:       tour.Distance,
+		KeyPoints:      tour.KeyPoints,
 		AuthorUsername: tour.AuthorUsername,
 		Message:        "Tour created successfully",
 	}
