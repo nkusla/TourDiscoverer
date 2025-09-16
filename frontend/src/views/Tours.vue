@@ -187,7 +187,7 @@
               
               <div class="col-md-6">
                 <h6>Tour Route</h6>
-                <TourMap
+                <LeafletMap
                   :key-points="selectedTour.key_points || []"
                   :editable="false"
                   map-height="400px"
@@ -218,13 +218,13 @@
 import { ref, computed, onMounted } from 'vue'
 import { useTourStore } from '../stores/tour'
 import { useUserStore } from '../stores/user'
-import TourMap from '../components/Map/TourMap.vue'
+import LeafletMap from '../components/Map/LeafletMap.vue'
 import { Modal } from 'bootstrap'
 
 export default {
   name: 'Tours',
   components: {
-    TourMap
+    LeafletMap
   },
   setup() {
     const tourStore = useTourStore()
