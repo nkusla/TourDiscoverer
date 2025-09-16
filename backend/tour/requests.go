@@ -12,12 +12,15 @@ type CreateTourRequest struct {
 }
 
 type UpdateTourRequest struct {
-	Name             string      `json:"name"`
-	Description      string      `json:"description"`
-	Difficulty       string      `json:"difficulty" validate:"omitempty,oneof=easy medium hard"`
-	Tags             string      `json:"tags"`
-	TransportDetails []Transport `json:"transport_details"`
-	Price            float64     `json:"price" validate:"omitempty,gt=0"`
+	Name             string                   `json:"name"`
+	Description      string                   `json:"description"`
+	Difficulty       string                   `json:"difficulty" validate:"omitempty,oneof=easy medium hard"`
+	Tags             string                   `json:"tags"`
+	TransportDetails []Transport              `json:"transport_details"`
+	Price            float64                  `json:"price" validate:"omitempty,gt=0"`
+	KeyPoints        []CreateKeyPointRequest  `json:"key_points"`
+	Distance         float64                  `json:"distance"`
+	Status           string                   `json:"status"`
 }
 
 type CreateKeyPointRequest struct {

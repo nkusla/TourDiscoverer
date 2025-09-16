@@ -3,6 +3,7 @@ import { useUserStore } from '../stores/user'
 import Home from '../views/Home.vue'
 import Tours from '../views/Tours.vue'
 import CreateTour from '../views/CreateTour.vue'
+import TourEditor from '../views/TourEditor.vue'
 import Login from '../views/Login.vue'
 import Profile from '../views/Profile.vue'
 import Users from '../views/Users.vue'
@@ -21,13 +22,13 @@ const routes = [
   {
     path: '/tour/create',
     name: 'CreateTour',
-    component: CreateTour,
+    component: TourEditor,
     meta: { requiresAuth: true }
   },
   {
     path: '/tour/edit/:id',
     name: 'EditTour',
-    component: CreateTour,
+    component: TourEditor,
     props: true,
     meta: { requiresAuth: true }
   },

@@ -117,6 +117,8 @@ func (h *TourHandler) UpdateTour(w http.ResponseWriter, r *http.Request) {
 		Tags:           tour.Tags,
 		Status:         tour.Status,
 		Price:          tour.Price,
+		Distance:       tour.Distance,
+		KeyPoints:      tour.KeyPoints,
 		AuthorUsername: tour.AuthorUsername,
 		Message:        "Tour updated successfully",
 	}
