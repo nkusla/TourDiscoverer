@@ -23,14 +23,14 @@ const routes = [
     path: '/tour/create',
     name: 'CreateTour',
     component: TourEditor,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiresGuideOrAdmin: true }
   },
   {
     path: '/tour/edit/:id',
     name: 'EditTour',
     component: TourEditor,
     props: true,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiresGuideOrAdmin: true }
   },
   {
     path: '/login',
@@ -69,6 +69,12 @@ router.beforeEach((to, from, next) => {
 
   // Check if route requires admin privileges
   if (to.meta.requiresAdmin && !userStore.isAdmin) {
+    next('/')
+    return
+  }
+
+  // Check if route requires guide or admin privileges
+  if (to.meta.requiresGuideOrAdmin && !userStore.canCreateTours) {
     next('/')
     return
   }

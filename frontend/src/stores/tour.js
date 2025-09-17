@@ -10,7 +10,21 @@ export const useTourStore = defineStore('tour', () => {
   const fetchTours = async (params = {}) => {
     loading.value = true
     try {
-      const response = await api.get('/api/tours', { params })
+      const response = await api.get('/api/tours/all', { params })
+      // Backend returns { tours: [...], count: number }
+      tours.value = response.data.tours || []
+      return response.data.tours || []
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to fetch tours')
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const fetchMyTours = async (params = {}) => {
+    loading.value = true
+    try {
+      const response = await api.get('/api/tours/my', { params })
       // Backend returns { tours: [...], count: number }
       tours.value = response.data.tours || []
       return response.data.tours || []
@@ -76,7 +90,7 @@ export const useTourStore = defineStore('tour', () => {
   
   const publishTour = async (id) => {
     try {
-      const response = await api.patch(`/api/tours/${id}/publish`)
+      const response = await api.put(`/api/tours/${id}/publish`)
       
       // Update tour status in the list
       const index = tours.value.findIndex(tour => tour.id === id)
@@ -92,7 +106,7 @@ export const useTourStore = defineStore('tour', () => {
   
   const unpublishTour = async (id) => {
     try {
-      const response = await api.patch(`/api/tours/${id}/unpublish`)
+      const response = await api.put(`/api/tours/${id}/unpublish`)
       
       // Update tour status in the list
       const index = tours.value.findIndex(tour => tour.id === id)
@@ -169,6 +183,7 @@ export const useTourStore = defineStore('tour', () => {
     currentTour,
     loading,
     fetchTours,
+    fetchMyTours,
     getTour,
     createTour,
     updateTour,

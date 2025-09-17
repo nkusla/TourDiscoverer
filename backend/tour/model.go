@@ -69,9 +69,10 @@ func (t *Tour) CanBePublished() bool {
 		return false
 	}
 
-	if len(t.TransportDetails) < 1 {
-		return false
-	}
+	// TransportDetails are optional for now
+	// if len(t.TransportDetails) < 1 {
+	// 	return false
+	// }
 
 	return true
 }

@@ -10,6 +10,9 @@ export const useUserStore = defineStore('user', () => {
   const isAuthenticated = computed(() => !!token.value)
   const username = computed(() => user.value?.username)
   const isAdmin = computed(() => user.value?.role === 'admin')
+  const isGuide = computed(() => user.value?.role === 'guide')
+  const isTourist = computed(() => user.value?.role === 'tourist')
+  const canCreateTours = computed(() => user.value?.role === 'guide' || user.value?.role === 'admin')
 
   const login = async (credentials) => {
     try {
@@ -227,6 +230,9 @@ export const useUserStore = defineStore('user', () => {
     isAuthenticated,
     username,
     isAdmin,
+    isGuide,
+    isTourist,
+    canCreateTours,
     login,
     register,
     logout,

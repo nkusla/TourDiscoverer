@@ -19,6 +19,12 @@ func (repo *TourRepository) GetToursByAuthor(authorUsername string) ([]Tour, err
 	return tours, result.Error
 }
 
+func (repo *TourRepository) GetAllPublishedTours() ([]Tour, error) {
+	var tours []Tour
+	result := repo.database.Preload("KeyPoints").Where("status = ?", TourStatusPublished).Find(&tours)
+	return tours, result.Error
+}
+
 func (repo *TourRepository) GetTourByID(id uint) (*Tour, error) {
 	var tour Tour
 	result := repo.database.Preload("KeyPoints").Where("id = ?", id).First(&tour)

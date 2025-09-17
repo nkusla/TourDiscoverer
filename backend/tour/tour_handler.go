@@ -154,6 +154,23 @@ func (h *TourHandler) GetMyTours(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
+func (h *TourHandler) GetAllTours(w http.ResponseWriter, r *http.Request) {
+	tours, err := h.service.GetAllPublishedTours()
+	if err != nil {
+		h.sendErrorResponse(w, "Failed to fetch tours: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	response := GetToursResponse{
+		Tours: tours,
+		Count: len(tours),
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
+}
+
 func (h *TourHandler) GetTourByID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	idStr := vars["id"]
@@ -268,6 +285,7 @@ func (h *TourHandler) PublishTour(w http.ResponseWriter, r *http.Request) {
 		default:
 			h.sendErrorResponse(w, "Failed to publish tour: "+err.Error(), http.StatusInternalServerError)
 		}
+		return
 	}
 
 	w.WriteHeader(http.StatusOK)

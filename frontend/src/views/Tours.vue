@@ -3,7 +3,11 @@
     <div class="container py-4">
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Tours</h2>
-        <router-link to="/tour/create" class="btn btn-primary">
+        <router-link 
+          to="/tour/create" 
+          class="btn btn-primary"
+          v-if="userStore.canCreateTours"
+        >
           <i class="fas fa-plus"></i> Create New Tour
         </router-link>
       </div>
@@ -105,27 +109,61 @@
             </div>
             
             <div class="card-footer bg-transparent">
-              <div class="btn-group w-100" role="group">
-                <button 
-                  class="btn btn-outline-primary"
-                  @click="viewTour(tour)"
-                >
-                  View
-                </button>
-                <router-link 
-                  :to="`/tour/edit/${tour.id}`"
-                  class="btn btn-outline-secondary"
-                  v-if="canEdit(tour)"
-                >
-                  Edit
-                </router-link>
-                <button 
-                  class="btn btn-outline-danger"
-                  @click="deleteTour(tour)"
-                  v-if="canDelete(tour)"
-                >
-                  Delete
-                </button>
+              <div class="d-grid gap-2">
+                <!-- Main Actions -->
+                <div class="btn-group" role="group">
+                  <button 
+                    class="btn btn-outline-primary"
+                    @click="viewTour(tour)"
+                  >
+                    View
+                  </button>
+                  <router-link 
+                    :to="`/tour/edit/${tour.id}`"
+                    class="btn btn-outline-secondary"
+                    v-if="canEdit(tour)"
+                  >
+                    Edit
+                  </router-link>
+                  <button 
+                    v-if="canEdit(tour) && tour.status === 'draft'"
+                    class="btn btn-outline-success"
+                    @click="publishTour(tour)"
+                  >
+                    Publish
+                  </button>
+                  <button 
+                    v-if="canEdit(tour) && tour.status === 'published'"
+                    class="btn btn-outline-warning"
+                    @click="unpublishTour(tour)"
+                  >
+                    Unpublish
+                  </button>
+                  <button 
+                    class="btn btn-outline-danger"
+                    @click="deleteTour(tour)"
+                    v-if="canDelete(tour)"
+                  >
+                    Delete
+                  </button>
+                </div>
+                
+                <!-- Review Actions -->
+                <div class="btn-group" role="group">
+                  <button 
+                    class="btn btn-success btn-sm"
+                    @click="openReviewForm(tour)"
+                    v-if="userStore.isAuthenticated"
+                  >
+                    <i class="fas fa-star me-1"></i>Leave Review
+                  </button>
+                  <button 
+                    class="btn btn-info btn-sm"
+                    @click="openReviewList(tour)"
+                  >
+                    <i class="fas fa-comments me-1"></i>View Reviews
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -139,9 +177,13 @@
         <p class="text-muted">
           {{ searchQuery || difficultyFilter || statusFilter 
              ? 'Try adjusting your filters' 
-             : 'Create your first tour to get started' }}
+             : (userStore.canCreateTours ? 'Create your first tour to get started' : 'No tours available at the moment') }}
         </p>
-        <router-link to="/tour/create" class="btn btn-primary" v-if="!searchQuery && !difficultyFilter && !statusFilter">
+        <router-link 
+          to="/tour/create" 
+          class="btn btn-primary" 
+          v-if="!searchQuery && !difficultyFilter && !statusFilter && userStore.canCreateTours"
+        >
           Create Tour
         </router-link>
       </div>
@@ -211,6 +253,22 @@
         </div>
       </div>
     </div>
+    
+    <!-- Review Form Modal -->
+    <ReviewForm 
+      v-if="selectedTourForReview"
+      :tour-id="selectedTourForReview.id"
+      modal-id="reviewFormModal"
+      @review-submitted="onReviewSubmitted"
+    />
+    
+    <!-- Review List Modal -->
+    <ReviewList 
+      v-if="selectedTourForReviews"
+      :tour-id="selectedTourForReviews.id"
+      modal-id="reviewListModal"
+      ref="reviewListComponent"
+    />
   </div>
 </template>
 
@@ -219,12 +277,16 @@ import { ref, computed, onMounted } from 'vue'
 import { useTourStore } from '../stores/tour'
 import { useUserStore } from '../stores/user'
 import LeafletMap from '../components/Map/LeafletMap.vue'
+import ReviewForm from '../components/Review/ReviewForm.vue'
+import ReviewList from '../components/Review/ReviewList.vue'
 import { Modal } from 'bootstrap'
 
 export default {
   name: 'Tours',
   components: {
-    LeafletMap
+    LeafletMap,
+    ReviewForm,
+    ReviewList
   },
   setup() {
     const tourStore = useTourStore()
@@ -237,6 +299,11 @@ export default {
     const selectedTour = ref(null)
     const viewModal = ref(null)
     const viewModalInstance = ref(null)
+    
+    // Review-related refs
+    const selectedTourForReview = ref(null)
+    const selectedTourForReviews = ref(null)
+    const reviewListComponent = ref(null)
     
     const filteredTours = computed(() => {
       let tours = tourStore.tours
@@ -274,7 +341,12 @@ export default {
     const loadTours = async () => {
       loading.value = true
       try {
-        await tourStore.fetchTours()
+        // Guides see their own tours (draft + published), tourists see all published tours
+        if (userStore.isGuide) {
+          await tourStore.fetchMyTours()
+        } else {
+          await tourStore.fetchTours()
+        }
       } catch (error) {
         console.error('Failed to load tours:', error)
       } finally {
@@ -295,6 +367,32 @@ export default {
           await loadTours()
         } catch (error) {
           console.error('Failed to delete tour:', error)
+        }
+      }
+    }
+
+    const publishTour = async (tour) => {
+      if (confirm(`Are you sure you want to publish "${tour.name}"?`)) {
+        try {
+          await tourStore.publishTour(tour.id)
+          // Reload tours to reflect the status change
+          await loadTours()
+        } catch (error) {
+          console.error('Failed to publish tour:', error)
+          alert('Failed to publish tour. Please try again.')
+        }
+      }
+    }
+
+    const unpublishTour = async (tour) => {
+      if (confirm(`Are you sure you want to unpublish "${tour.name}"?`)) {
+        try {
+          await tourStore.unpublishTour(tour.id)
+          // Reload tours to reflect the status change
+          await loadTours()
+        } catch (error) {
+          console.error('Failed to unpublish tour:', error)
+          alert('Failed to unpublish tour. Please try again.')
         }
       }
     }
@@ -336,6 +434,26 @@ export default {
       return new Date(dateString).toLocaleDateString()
     }
     
+    // Review methods
+    const openReviewForm = (tour) => {
+      selectedTourForReview.value = tour
+      const modal = new Modal(document.getElementById('reviewFormModal'))
+      modal.show()
+    }
+    
+    const openReviewList = (tour) => {
+      selectedTourForReviews.value = tour
+      const modal = new Modal(document.getElementById('reviewListModal'))
+      modal.show()
+    }
+    
+    const onReviewSubmitted = () => {
+      // Optionally refresh reviews if the review list is open
+      if (reviewListComponent.value) {
+        reviewListComponent.value.refresh()
+      }
+    }
+    
     return {
       loading,
       searchQuery,
@@ -344,14 +462,23 @@ export default {
       selectedTour,
       viewModal,
       filteredTours,
+      selectedTourForReview,
+      selectedTourForReviews,
+      reviewListComponent,
+      userStore,
       viewTour,
       deleteTour,
+      publishTour,
+      unpublishTour,
       canEdit,
       canDelete,
       clearFilters,
       getStatusBadgeClass,
       truncateText,
-      formatDate
+      formatDate,
+      openReviewForm,
+      openReviewList,
+      onReviewSubmitted
     }
   }
 }

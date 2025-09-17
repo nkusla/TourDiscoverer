@@ -170,6 +170,14 @@ func (service *TourService) GetToursByAuthor(authorUsername string) ([]Tour, err
 	return tours, nil
 }
 
+func (service *TourService) GetAllPublishedTours() ([]Tour, error) {
+	tours, err := service.repository.GetAllPublishedTours()
+	if err != nil {
+		return nil, err
+	}
+	return tours, nil
+}
+
 func (service *TourService) GetTourByID(id uint) (*Tour, error) {
 	return service.repository.GetTourByID(id)
 }
