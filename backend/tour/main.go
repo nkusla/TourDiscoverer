@@ -18,6 +18,7 @@ func main() {
 	handler := &TourHandler{service: service}
 
 	r.HandleFunc("/", handler.CreateTour).Methods(http.MethodPost)
+	r.HandleFunc("/{id}", handler.GetTourByID).Methods(http.MethodGet)
 	r.HandleFunc("/{id}", handler.UpdateTour).Methods(http.MethodPut)
 	r.HandleFunc("/", handler.GetMyTours).Methods(http.MethodGet)
 	r.HandleFunc("/{id}/keypoint", handler.CreateKeyPoint).Methods(http.MethodPost)

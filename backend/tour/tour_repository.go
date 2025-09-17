@@ -38,7 +38,13 @@ func (repo *TourRepository) DeleteTour(id uint) error {
 	return result.Error
 }
 
-// func (repo *TourRepository) CreateKeyPoint(keyPoint *KeyPoint) error {
-// 	result := repo.database.Create(keyPoint)
-// 	return result.Error
-// }
+func (repo *TourRepository) CreateKeyPoint(keyPoint *KeyPoint) error {
+	result := repo.database.Create(keyPoint)
+	return result.Error
+}
+
+func (repo *TourRepository) DeleteKeyPointsByTourID(tourID uint) error {
+	// Use Unscoped() to force hard delete instead of soft delete
+	result := repo.database.Unscoped().Where("tour_id = ?", tourID).Delete(&KeyPoint{})
+	return result.Error
+}

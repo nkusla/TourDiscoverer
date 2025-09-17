@@ -3,16 +3,16 @@
     <div class="container-fluid">
       <div class="row">
         <!-- Sidebar for tour details -->
-        <div class="col-md-4 col-lg-3 bg-light border-end">
+        <div class="col-md-4 col-lg-3 bg-light border-end" style="height: calc(100vh - 56px); overflow-y: auto;">
           <div class="p-3">
-            <h4>{{ isEditing ? 'Edit Tour' : 'Create Tour' }}</h4>
+            <h4>{{ isEditMode ? 'Edit Tour' : 'Create New Tour' }}</h4>
             
             <form @submit.prevent="saveTour">
               <!-- Basic Tour Info -->
               <div class="mb-3">
-                <label class="form-label">Tour Name</label>
+                <label class="form-label">Tour Name *</label>
                 <input 
-                  v-model="tour.name" 
+                  v-model="tourData.name" 
                   type="text" 
                   class="form-control"
                   required
@@ -21,9 +21,9 @@
               </div>
               
               <div class="mb-3">
-                <label class="form-label">Description</label>
+                <label class="form-label">Description *</label>
                 <textarea 
-                  v-model="tour.description" 
+                  v-model="tourData.description" 
                   class="form-control"
                   rows="3"
                   required
@@ -34,8 +34,8 @@
               <div class="row">
                 <div class="col-6">
                   <div class="mb-3">
-                    <label class="form-label">Difficulty</label>
-                    <select v-model="tour.difficulty" class="form-select" required>
+                    <label class="form-label">Difficulty *</label>
+                    <select v-model="tourData.difficulty" class="form-select" required>
                       <option value="">Select...</option>
                       <option value="easy">Easy</option>
                       <option value="medium">Medium</option>
@@ -49,20 +49,22 @@
                   <div class="mb-3">
                     <label class="form-label">Price ($)</label>
                     <input 
-                      v-model.number="tour.price" 
+                      v-model.number="tourData.price" 
                       type="number" 
                       class="form-control"
                       min="0"
                       step="0.01"
+                      :disabled="!isEditMode"
                     />
+                    <small class="text-muted" v-if="!isEditMode">Auto-set to 0 for draft</small>
                   </div>
                 </div>
               </div>
               
               <div class="mb-3">
-                <label class="form-label">Tags</label>
+                <label class="form-label">Tags *</label>
                 <input 
-                  v-model="tour.tags" 
+                  v-model="tourData.tags" 
                   type="text" 
                   class="form-control"
                   required
@@ -72,12 +74,17 @@
               
               <!-- Key Points List -->
               <div class="mb-3">
-                <h6>Key Points ({{ tour.key_points.length }})</h6>
-                <div class="key-points-list" style="max-height: 200px; overflow-y: auto;">
+                <h6>Key Points ({{ keyPoints.length }})</h6>
+                <div class="alert alert-info" v-if="keyPoints.length === 0">
+                  <small>Click on the map to add key points for your tour</small>
+                </div>
+                
+                <div class="key-points-list" style="max-height: 250px; overflow-y: auto;">
                   <div 
-                    v-for="(point, index) in tour.key_points" 
+                    v-for="(point, index) in keyPoints" 
                     :key="point.id || index"
                     class="card mb-2"
+                    :class="{ 'border-primary': selectedKeyPointIndex === index }"
                   >
                     <div class="card-body p-2">
                       <div class="d-flex justify-content-between align-items-start">
@@ -87,39 +94,83 @@
                           <small class="text-muted">
                             {{ point.latitude.toFixed(4) }}, {{ point.longitude.toFixed(4) }}
                           </small>
+                          <div v-if="point.description" class="mt-1">
+                            <small class="text-secondary">{{ point.description }}</small>
+                          </div>
                         </div>
-                        <button 
-                          type="button"
-                          class="btn btn-sm btn-outline-danger"
-                          @click="removeKeyPoint(index)"
-                        >
-                          ×
-                        </button>
+                        <div class="btn-group-vertical">
+                          <button 
+                            type="button"
+                            class="btn btn-sm btn-outline-primary"
+                            @click="editKeyPoint(index)"
+                            title="Edit key point"
+                          >
+                            ✏️
+                          </button>
+                          <button 
+                            type="button"
+                            class="btn btn-sm btn-outline-danger"
+                            @click="removeKeyPoint(index)"
+                            title="Delete key point"
+                          >
+                            🗑️
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  
-                  <div v-if="tour.key_points.length === 0" class="text-muted text-center py-3">
-                    <small>Click on the map to add key points</small>
                   </div>
                 </div>
               </div>
               
-              <!-- Distance info -->
-              <div class="mb-3" v-if="tour.distance > 0">
+              <!-- Distance and Status info -->
+              <div class="mb-3" v-if="totalDistance > 0">
                 <small class="text-muted">
-                  Total Distance: {{ tour.distance.toFixed(2) }} km
+                  <strong>Total Distance:</strong> {{ totalDistance.toFixed(2) }} km
+                </small>
+              </div>
+              
+              <div class="mb-3" v-if="isEditMode">
+                <small class="text-muted">
+                  <strong>Status:</strong> {{ tourData.status }}
                 </small>
               </div>
               
               <!-- Action buttons -->
               <div class="d-grid gap-2">
-                <button type="submit" class="btn btn-primary">
-                  {{ isEditing ? 'Update Tour' : 'Create Tour' }}
+                <button 
+                  type="submit" 
+                  class="btn btn-primary"
+                  :disabled="!canSave || isLoading"
+                >
+                  <span v-if="isLoading" class="spinner-border spinner-border-sm me-2"></span>
+                  {{ isEditMode ? 'Update Tour' : 'Create Tour' }}
                 </button>
-                <button type="button" class="btn btn-outline-secondary" @click="goBack">
+                
+                <button 
+                  type="button" 
+                  class="btn btn-outline-secondary" 
+                  @click="goBack"
+                >
                   Cancel
                 </button>
+                
+                <button 
+                  type="button" 
+                  class="btn btn-outline-warning" 
+                  @click="clearAll"
+                  v-if="!isEditMode"
+                >
+                  Clear All
+                </button>
+              </div>
+              
+              <!-- Success/Error Messages -->
+              <div v-if="successMessage" class="alert alert-success mt-3">
+                {{ successMessage }}
+              </div>
+              
+              <div v-if="errorMessage" class="alert alert-danger mt-3">
+                {{ errorMessage }}
               </div>
             </form>
           </div>
@@ -127,15 +178,15 @@
         
         <!-- Map area -->
         <div class="col-md-8 col-lg-9 p-0">
-          <TourMap
-            :key-points="tour.key_points"
+          <LeafletMap
+            :key-points="keyPoints"
             :editable="true"
+            :selected-point-index="selectedKeyPointIndex"
             map-height="calc(100vh - 56px)"
             @keypoint-added="addKeyPoint"
-            @keypoint-updated="updateKeyPoint"
-            @keypoint-removed="removeKeyPoint"
-            @keypoint-edit="openEditDialog"
-            @route-cleared="clearRoute"
+            @keypoint-moved="moveKeyPoint"
+            @keypoint-clicked="selectKeyPoint"
+            @map-clicked="onMapClick"
           />
         </div>
       </div>
@@ -155,9 +206,9 @@
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body">
-            <form @submit.prevent="saveKeyPointEdit">
+            <form>
               <div class="mb-3">
-                <label class="form-label">Name</label>
+                <label class="form-label">Name *</label>
                 <input 
                   v-model="editingKeyPoint.name" 
                   type="text" 
@@ -183,12 +234,11 @@
                       v-model.number="editingKeyPoint.latitude" 
                       type="number" 
                       class="form-control"
-                      step="0.000001"
-                      required
+                      step="any"
+                      readonly
                     />
                   </div>
                 </div>
-                
                 <div class="col-6">
                   <div class="mb-3">
                     <label class="form-label">Longitude</label>
@@ -196,21 +246,15 @@
                       v-model.number="editingKeyPoint.longitude" 
                       type="number" 
                       class="form-control"
-                      step="0.000001"
-                      required
+                      step="any"
+                      readonly
                     />
                   </div>
                 </div>
               </div>
               
-              <div class="mb-3">
-                <label class="form-label">Order</label>
-                <input 
-                  v-model.number="editingKeyPoint.order" 
-                  type="number" 
-                  class="form-control"
-                  min="0"
-                />
+              <div class="alert alert-info">
+                <small>💡 To change the location, click on the map while this dialog is open.</small>
               </div>
             </form>
           </div>
@@ -229,118 +273,72 @@
 </template>
 
 <script>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import TourMap from '../components/Map/TourMap.vue'
+import LeafletMap from '../components/Map/LeafletMap.vue'
 import { useTourStore } from '../stores/tour'
 import { Modal } from 'bootstrap'
 
 export default {
   name: 'TourEditor',
   components: {
-    TourMap
+    LeafletMap
   },
   props: {
-    id: String
+    id: String // Tour ID for editing
   },
   setup(props) {
     const route = useRoute()
     const router = useRouter()
     const tourStore = useTourStore()
     
-    const editModal = ref(null)
-    const editModalInstance = ref(null)
-    
-    const tour = ref({
+    // Reactive data
+    const tourData = ref({
       name: '',
       description: '',
       difficulty: '',
-      tags: '',
       price: 0,
-      key_points: [],
-      distance: 0
+      tags: ''
     })
     
+    const keyPoints = ref([])
+    const selectedKeyPointIndex = ref(-1)
     const editingKeyPoint = ref({})
-    const editingIndex = ref(-1)
+    const editingKeyPointIndex = ref(-1)
+    const isEditingPosition = ref(false)
     
-    const isEditing = computed(() => !!props.id)
+    const isLoading = ref(false)
+    const successMessage = ref('')
+    const errorMessage = ref('')
     
-    onMounted(async () => {
-      // Initialize Bootstrap modal
-      if (editModal.value) {
-        editModalInstance.value = new Modal(editModal.value)
-      }
+    // Modal reference
+    const editModal = ref(null)
+    let editModalInstance = null
+    
+    // Computed
+    const isEditMode = computed(() => !!props.id)
+    
+    const totalDistance = computed(() => {
+      if (keyPoints.value.length < 2) return 0
       
-      // Load tour data if editing
-      if (isEditing.value) {
-        try {
-          const tourData = await tourStore.getTour(props.id)
-          tour.value = { ...tourData }
-        } catch (error) {
-          console.error('Failed to load tour:', error)
-          // Handle error (show notification, redirect, etc.)
-        }
+      let distance = 0
+      for (let i = 0; i < keyPoints.value.length - 1; i++) {
+        const p1 = keyPoints.value[i]
+        const p2 = keyPoints.value[i + 1]
+        distance += calculateDistance(p1.latitude, p1.longitude, p2.latitude, p2.longitude)
       }
+      return distance
     })
     
-    const addKeyPoint = (keyPoint) => {
-      tour.value.key_points.push(keyPoint)
-      updateDistance()
-    }
+    const canSave = computed(() => {
+      return tourData.value.name && 
+             tourData.value.description && 
+             tourData.value.difficulty && 
+             tourData.value.tags &&
+             keyPoints.value.length >= 2
+    })
     
-    const updateKeyPoint = (updatedPoint) => {
-      const index = tour.value.key_points.findIndex(p => p.id === updatedPoint.id)
-      if (index !== -1) {
-        tour.value.key_points[index] = updatedPoint
-        updateDistance()
-      }
-    }
-    
-    const removeKeyPoint = (index) => {
-      tour.value.key_points.splice(index, 1)
-      updateDistance()
-    }
-    
-    const openEditDialog = ({ point, index }) => {
-      editingKeyPoint.value = { ...point }
-      editingIndex.value = index
-      editModalInstance.value?.show()
-    }
-    
-    const saveKeyPointEdit = () => {
-      if (editingIndex.value !== -1) {
-        tour.value.key_points[editingIndex.value] = { ...editingKeyPoint.value }
-        updateDistance()
-      }
-      editModalInstance.value?.hide()
-    }
-    
-    const clearRoute = () => {
-      tour.value.key_points = []
-      tour.value.distance = 0
-    }
-    
-    const updateDistance = () => {
-      // Simple distance calculation (you can implement more sophisticated calculation)
-      if (tour.value.key_points.length < 2) {
-        tour.value.distance = 0
-        return
-      }
-      
-      let totalDistance = 0
-      for (let i = 0; i < tour.value.key_points.length - 1; i++) {
-        const point1 = tour.value.key_points[i]
-        const point2 = tour.value.key_points[i + 1]
-        totalDistance += calculateDistance(
-          point1.latitude, point1.longitude,
-          point2.latitude, point2.longitude
-        )
-      }
-      
-      tour.value.distance = totalDistance
-    }
-    
+    // Methods
     const calculateDistance = (lat1, lon1, lat2, lon2) => {
       const R = 6371 // Earth's radius in km
       const dLat = (lat2 - lat1) * Math.PI / 180
@@ -352,74 +350,197 @@ export default {
       return R * c
     }
     
-    const saveTour = async () => {
+    const loadTour = async () => {
+      if (!props.id) return
+      
       try {
-        if (isEditing.value) {
-          // For editing, send all data including key points as before
-          const tourData = {
-            ...tour.value,
-            key_points: tour.value.key_points.map((point, index) => ({
-              ...point,
-              order: point.order || index
-            }))
-          }
-          await tourStore.updateTour(props.id, tourData)
-        } else {
-          // For creation, create tour first without key points
-          const tourData = {
-            name: tour.value.name,
-            description: tour.value.description,
-            difficulty: tour.value.difficulty,
-            tags: tour.value.tags,
-            price: tour.value.price || 0
-          }
-          
-          // Create the tour
-          const createdTour = await tourStore.createTour(tourData)
-          
-          // Then add key points one by one
-          if (tour.value.key_points.length > 0) {
-            for (let i = 0; i < tour.value.key_points.length; i++) {
-              const keyPoint = tour.value.key_points[i]
-              const keyPointData = {
-                name: keyPoint.name,
-                description: keyPoint.description || '',
-                latitude: keyPoint.latitude,
-                longitude: keyPoint.longitude,
-                image_url: keyPoint.image_url || '',
-                order: keyPoint.order || i
-              }
-              
-              await tourStore.addKeyPoint(createdTour.id, keyPointData)
-            }
-          }
+        isLoading.value = true
+        const tour = await tourStore.getTour(props.id)
+        
+        tourData.value = {
+          name: tour.name,
+          description: tour.description,
+          difficulty: tour.difficulty,
+          price: tour.price,
+          tags: tour.tags
         }
         
-        // Redirect to tours list
-        router.push('/tours')
+        keyPoints.value = tour.key_points || []
       } catch (error) {
-        console.error('Failed to save tour:', error)
-        // Handle error (show notification)
+        errorMessage.value = 'Failed to load tour: ' + error.message
+      } finally {
+        isLoading.value = false
+      }
+    }
+    
+    const addKeyPoint = (newPoint) => {
+      const keyPoint = {
+        id: Date.now(),
+        name: newPoint.name || `Point ${keyPoints.value.length + 1}`,
+        description: '',
+        latitude: newPoint.latitude,
+        longitude: newPoint.longitude,
+        order: keyPoints.value.length
+      }
+      keyPoints.value.push(keyPoint)
+      selectedKeyPointIndex.value = keyPoints.value.length - 1
+    }
+    
+    const removeKeyPoint = (index) => {
+      if (confirm('Are you sure you want to delete this key point?')) {
+        keyPoints.value.splice(index, 1)
+        // Update order for remaining points
+        keyPoints.value.forEach((point, idx) => {
+          point.order = idx
+        })
+        selectedKeyPointIndex.value = -1
+      }
+    }
+    
+    const editKeyPoint = (index) => {
+      editingKeyPointIndex.value = index
+      editingKeyPoint.value = { ...keyPoints.value[index] }
+      isEditingPosition.value = true
+      selectedKeyPointIndex.value = index
+      
+      if (editModalInstance) {
+        editModalInstance.show()
+      }
+    }
+    
+    const selectKeyPoint = (index) => {
+      selectedKeyPointIndex.value = index
+    }
+    
+    const moveKeyPoint = (index, newPosition) => {
+      if (index >= 0 && index < keyPoints.value.length) {
+        keyPoints.value[index].latitude = newPosition.latitude
+        keyPoints.value[index].longitude = newPosition.longitude
+        
+        // If we're editing a key point, update the editing data
+        if (isEditingPosition.value && editingKeyPointIndex.value === index) {
+          editingKeyPoint.value.latitude = newPosition.latitude
+          editingKeyPoint.value.longitude = newPosition.longitude
+        }
+      }
+    }
+    
+    const onMapClick = (position) => {
+      if (isEditingPosition.value && editingKeyPointIndex.value >= 0) {
+        // Update the position of the key point being edited
+        moveKeyPoint(editingKeyPointIndex.value, position)
+      } else {
+        // Add new key point
+        addKeyPoint(position)
+      }
+    }
+    
+    const saveKeyPointEdit = () => {
+      if (editingKeyPointIndex.value >= 0) {
+        keyPoints.value[editingKeyPointIndex.value] = { ...editingKeyPoint.value }
+        editingKeyPointIndex.value = -1
+        isEditingPosition.value = false
+        
+        if (editModalInstance) {
+          editModalInstance.hide()
+        }
+      }
+    }
+    
+    const saveTour = async () => {
+      if (!canSave.value) return
+      
+      isLoading.value = true
+      errorMessage.value = ''
+      successMessage.value = ''
+      
+      try {
+        const tourPayload = {
+          ...tourData.value,
+          key_points: keyPoints.value.map((point, index) => ({
+            ...point,
+            order: index
+          })),
+          distance: totalDistance.value,
+          status: 'draft',
+          price: isEditMode.value ? tourData.value.price : 0
+        }
+        
+        let result
+        if (isEditMode.value) {
+          result = await tourStore.updateTour(props.id, tourPayload)
+          successMessage.value = 'Tour updated successfully!'
+        } else {
+          result = await tourStore.createTour(tourPayload)
+          successMessage.value = 'Tour created successfully!'
+        }
+        
+        // Redirect to tours list after a delay
+        setTimeout(() => {
+          router.push('/tours')
+        }, 2000)
+        
+      } catch (error) {
+        errorMessage.value = 'Error saving tour: ' + error.message
+      } finally {
+        isLoading.value = false
+      }
+    }
+    
+    const clearAll = () => {
+      if (confirm('Are you sure you want to clear all data?')) {
+        tourData.value = {
+          name: '',
+          description: '',
+          difficulty: '',
+          price: 0,
+          tags: ''
+        }
+        keyPoints.value = []
+        selectedKeyPointIndex.value = -1
+        errorMessage.value = ''
+        successMessage.value = ''
       }
     }
     
     const goBack = () => {
-      router.back()
+      router.push('/tours')
     }
     
+    // Lifecycle
+    onMounted(async () => {
+      // Initialize Bootstrap modal
+      if (editModal.value) {
+        editModalInstance = new Modal(editModal.value)
+      }
+      
+      // Load tour data if editing
+      if (isEditMode.value) {
+        await loadTour()
+      }
+    })
+    
     return {
-      tour,
+      tourData,
+      keyPoints,
+      selectedKeyPointIndex,
       editingKeyPoint,
-      editingIndex,
+      isLoading,
+      successMessage,
+      errorMessage,
       editModal,
-      isEditing,
+      isEditMode,
+      totalDistance,
+      canSave,
       addKeyPoint,
-      updateKeyPoint,
       removeKeyPoint,
-      openEditDialog,
+      editKeyPoint,
+      selectKeyPoint,
+      moveKeyPoint,
+      onMapClick,
       saveKeyPointEdit,
-      clearRoute,
       saveTour,
+      clearAll,
       goBack
     }
   }
@@ -428,24 +549,29 @@ export default {
 
 <style scoped>
 .tour-editor {
-  height: calc(100vh - 56px);
-}
-
-.key-points-list {
-  border: 1px solid #dee2e6;
-  border-radius: 0.375rem;
-  padding: 0.5rem;
+  height: 100vh;
 }
 
 .key-points-list .card {
-  border: 1px solid #e0e0e0;
+  transition: all 0.2s ease;
 }
 
-.modal-backdrop {
-  z-index: 1040;
+.key-points-list .card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
-.modal {
-  z-index: 1050;
+.btn-group-vertical .btn {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  line-height: 1;
+}
+
+.alert {
+  border-radius: 0.375rem;
+}
+
+.modal-content {
+  border-radius: 0.5rem;
 }
 </style>
