@@ -56,7 +56,8 @@ const routes = [
   {
     path: '/blogs',
     name: 'BlogList',
-    component: BlogList
+    component: BlogList,
+    meta: { requiresAuth: true }
   },
   {
     path: '/blog/create',

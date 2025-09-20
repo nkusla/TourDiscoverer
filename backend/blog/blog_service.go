@@ -4,6 +4,7 @@ import "errors"
 
 type BlogService struct {
 	repository *BlogRepository
+	httpClient *HTTPClient
 }
 
 func (s *BlogService) CreateBlog(blog *Blog) error {
@@ -11,28 +12,49 @@ func (s *BlogService) CreateBlog(blog *Blog) error {
 }
 
 func (s *BlogService) GetAllBlogs(username string) ([]Blog, error) {
-	blogs, err := s.repository.GetAll()
+	// Ako je username prazan (neulogovan korisnik), ne vraćaj nikakve blogove
+	if username == "" {
+		return []Blog{}, nil
+	}
+
+	// Dobij listu korisnika koje trenutni korisnik prati
+	followingUsers, err := s.httpClient.GetFollowingUsers(username)
+	if err != nil {
+		// Ako ne možemo da dobijemo listu praćenih korisnika, vraćamo praznu listu
+		return []Blog{}, nil
+	}
+
+	// Kreiraj mapu praćenih korisnika za brže pretraživanje
+	followingMap := make(map[string]bool)
+	for _, user := range followingUsers {
+		followingMap[user.Username] = true
+	}
+
+	// Dodaj i sebe u listu da može da vidi svoje blogove
+	followingMap[username] = true
+
+	// Dobij sve blogove
+	allBlogs, err := s.repository.GetAll()
 	if err != nil {
 		return nil, err
 	}
-	
-	// Ako je username prazan (neulogovan korisnik), vrati blog-ove bez like status-a
-	if username == "" {
-		return blogs, nil
-	}
-	
-	// Za ulogovane korisnike, dodaj is_liked_by_user informaciju
-	for i := range blogs {
-		isLiked, err := s.repository.IsLikedByUser(blogs[i].ID, username)
-		if err != nil {
-			// Ako ima greška, postavi na false
-			blogs[i].IsLikedByUser = false
-		} else {
-			blogs[i].IsLikedByUser = isLiked
+
+	// Filtriraj blogove - prikaži samo one od korisnika koje prati
+	var filteredBlogs []Blog
+	for _, blog := range allBlogs {
+		if followingMap[blog.Author] {
+			// Dodaj is_liked_by_user informaciju
+			isLiked, err := s.repository.IsLikedByUser(blog.ID, username)
+			if err != nil {
+				blog.IsLikedByUser = false
+			} else {
+				blog.IsLikedByUser = isLiked
+			}
+			filteredBlogs = append(filteredBlogs, blog)
 		}
 	}
-	
-	return blogs, nil
+
+	return filteredBlogs, nil
 }
 
 func (s *BlogService) GetBlogByID(id string) (*Blog, error) {
