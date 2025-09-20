@@ -22,7 +22,7 @@
           </li>
           <li class="nav-item" v-if="isAuthenticated">
             <router-link class="nav-link" to="/recommendations">
-              Discover Friends
+              Discover People
             </router-link>
           </li>
           <li class="nav-item" v-if="isAdmin">

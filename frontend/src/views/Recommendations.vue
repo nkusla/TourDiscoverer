@@ -75,12 +75,6 @@
               >
                 {{ followingUsers.has(user.username) ? 'Following...' : 'Follow' }}
               </button>
-              <button
-                class="btn btn-outline-secondary btn-sm"
-                @click="viewProfile(user.username)"
-              >
-                View Profile
-              </button>
             </div>
           </div>
         </div>
@@ -166,11 +160,6 @@ export default {
       }
     }
 
-    const viewProfile = (username) => {
-      // Navigate to user profile - adjust route as needed
-      router.push(`/profile/${username}`)
-    }
-
     const getRoleBadgeClass = (role) => {
       switch (role?.toLowerCase()) {
         case 'guide':
@@ -193,7 +182,6 @@ export default {
       followingUsers,
       fetchRecommendations,
       followUser,
-      viewProfile,
       getRoleBadgeClass
     }
   }
