@@ -10,11 +10,22 @@ type CommentHandler struct {
 }
 
 func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
+	// Uzmi username iz header-a koji postavlja API Gateway
+	username := r.Header.Get("x-username")
+	if username == "" {
+		http.Error(w, "username not found in headers", http.StatusBadRequest)
+		return
+	}
+
 	var comment Comment
 	if err := json.NewDecoder(r.Body).Decode(&comment); err != nil {
 		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
 	}
+
+	// Postavi author na osnovu JWT token-a
+	comment.Author = username
+
 	if err := h.service.CreateComment(&comment); err != nil {
 		http.Error(w, "failed to create comment", http.StatusInternalServerError)
 		return

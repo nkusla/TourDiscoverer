@@ -7,6 +7,8 @@ import TourEditor from '../views/TourEditor.vue'
 import Login from '../views/Login.vue'
 import Profile from '../views/Profile.vue'
 import Users from '../views/Users.vue'
+import BlogList from '../views/BlogList.vue'
+import CreateBlog from '../views/CreateBlog.vue'
 
 const routes = [
   {
@@ -49,6 +51,17 @@ const routes = [
     name: 'Users',
     component: Users,
     meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/blogs',
+    name: 'BlogList',
+    component: BlogList
+  },
+  {
+    path: '/blog/create',
+    name: 'CreateBlog',
+    component: CreateBlog,
+    meta: { requiresAuth: true }
   }
 ]
 

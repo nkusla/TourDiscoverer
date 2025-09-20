@@ -87,6 +87,33 @@ api.use('/api/tours', validateJWT, createProxyMiddleware({
   },
 }));
 
+// Public blog routes (for reading blogs and comments)
+api.get('/api/blogs', createProxyMiddleware({
+  target: BLOG_SERVICE_URL,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api/blogs': '',
+  },
+}));
+
+// Protected blog routes for authenticated users to get personalized blogs
+api.get('/api/blogs/personalized', validateJWT, createProxyMiddleware({
+  target: BLOG_SERVICE_URL,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api/blogs/personalized': '',
+  },
+}));
+
+api.get('/api/blogs/comments', createProxyMiddleware({
+  target: BLOG_SERVICE_URL,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api/blogs': '',
+  },
+}));
+
+// Protected blog routes (for creating, liking, commenting)
 api.use('/api/blogs', validateJWT, createProxyMiddleware({
   target: BLOG_SERVICE_URL,
   changeOrigin: true,

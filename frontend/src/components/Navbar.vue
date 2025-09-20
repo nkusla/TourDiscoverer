@@ -17,8 +17,14 @@
           <li class="nav-item">
             <router-link class="nav-link" to="/tours">Tours</router-link>
           </li>
+          <li class="nav-item">
+            <router-link class="nav-link" to="/blogs">Blogs</router-link>
+          </li>
           <li class="nav-item" v-if="isAuthenticated">
             <router-link class="nav-link" to="/tour/create">Create Tour</router-link>
+          </li>
+          <li class="nav-item" v-if="isAuthenticated">
+            <router-link class="nav-link" to="/blog/create">Create Blog</router-link>
           </li>
           <li class="nav-item" v-if="isAdmin">
             <router-link class="nav-link" to="/users">Users</router-link>

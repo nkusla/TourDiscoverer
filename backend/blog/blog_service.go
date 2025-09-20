@@ -10,8 +10,29 @@ func (s *BlogService) CreateBlog(blog *Blog) error {
 	return s.repository.Create(blog)
 }
 
-func (s *BlogService) GetAllBlogs() ([]Blog, error) {
-	return s.repository.GetAll()
+func (s *BlogService) GetAllBlogs(username string) ([]Blog, error) {
+	blogs, err := s.repository.GetAll()
+	if err != nil {
+		return nil, err
+	}
+	
+	// Ako je username prazan (neulogovan korisnik), vrati blog-ove bez like status-a
+	if username == "" {
+		return blogs, nil
+	}
+	
+	// Za ulogovane korisnike, dodaj is_liked_by_user informaciju
+	for i := range blogs {
+		isLiked, err := s.repository.IsLikedByUser(blogs[i].ID, username)
+		if err != nil {
+			// Ako ima greška, postavi na false
+			blogs[i].IsLikedByUser = false
+		} else {
+			blogs[i].IsLikedByUser = isLiked
+		}
+	}
+	
+	return blogs, nil
 }
 
 func (s *BlogService) GetBlogByID(id string) (*Blog, error) {
