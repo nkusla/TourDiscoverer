@@ -30,7 +30,7 @@ func InitDatabase() *gorm.DB {
 	log.Println("Connected to stakeholder database")
 
 	// Auto migrate the schema
-	err = db.AutoMigrate(&Stakeholder{})
+	err = db.AutoMigrate(&Stakeholder{}, &TouristPosition{})
 	if err != nil {
 		log.Fatalf("Failed to migrate database: %v", err)
 	}

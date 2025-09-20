@@ -7,9 +7,10 @@ var (
 	ErrStakeholderAlreadyExists = errors.New("stakeholder profile already exists")
 	ErrUsernameRequired         = errors.New("username is required")
 	ErrInvalidProfileData       = errors.New("invalid profile data")
+	ErrPositionNotFound         = errors.New("position not found")
 )
 
 const (
-	StakeholderUsernamePrimaryKey = "stakeholders_pkey"
+	StakeholderUsernamePrimaryKey  = "stakeholders_pkey"
 	StakeholderUsernameUniqueIndex = "stakeholders_username_key"
 )

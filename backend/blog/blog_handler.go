@@ -11,11 +11,22 @@ type BlogHandler struct {
 }
 
 func (h *BlogHandler) CreateBlog(w http.ResponseWriter, r *http.Request) {
+	// Uzmi username iz header-a koji postavlja API Gateway
+	username := r.Header.Get("x-username")
+	if username == "" {
+		http.Error(w, "username not found in headers", http.StatusBadRequest)
+		return
+	}
+
 	var blog Blog
 	if err := json.NewDecoder(r.Body).Decode(&blog); err != nil {
 		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
 	}
+
+	// Postavi author na osnovu JWT token-a
+	blog.Author = username
+
 	if err := h.service.CreateBlog(&blog); err != nil {
 		http.Error(w, "failed to create blog", http.StatusInternalServerError)
 		return
@@ -24,7 +35,10 @@ func (h *BlogHandler) CreateBlog(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *BlogHandler) GetAllBlogs(w http.ResponseWriter, r *http.Request) {
-	blogs, err := h.service.GetAllBlogs()
+	// Uzmi username iz header-a ako postoji (opciono za javni pristup)
+	username := r.Header.Get("x-username")
+	
+	blogs, err := h.service.GetAllBlogs(username)
 	if err != nil {
 		http.Error(w, "failed to fetch blogs", http.StatusInternalServerError)
 		return

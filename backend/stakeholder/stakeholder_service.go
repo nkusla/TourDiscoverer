@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+
 	"gorm.io/gorm"
 )
 
@@ -76,4 +77,16 @@ func (s *StakeholderService) UpdateStakeholderProfile(username, firstName, lastN
 	}
 
 	return stakeholder, nil
+}
+
+func (s *StakeholderService) UpdateTouristPosition(username string, latitude, longitude float64) (*TouristPosition, error) {
+	return s.repository.UpdateTouristPosition(username, latitude, longitude)
+}
+
+func (s *StakeholderService) GetTouristPosition(username string) (*TouristPosition, error) {
+	return s.repository.GetTouristPosition(username)
+}
+
+func (s *StakeholderService) DeleteTouristPosition(username string) error {
+	return s.repository.DeleteTouristPosition(username)
 }

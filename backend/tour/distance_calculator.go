@@ -8,11 +8,8 @@ import (
 // DistanceCalculator provides static methods for calculating distances
 type DistanceCalculator struct{}
 
-// HaversineDistance calculates the great-circle distance between two points
-// on Earth given their latitude and longitude in decimal degrees.
-// Returns distance in kilometers.
-func (DistanceCalculator) haversineDistance(lat1, lon1, lat2, lon2 float64) float64 {
-	const earthRadius = 6371 // Earth's radius in kilometers
+func (DistanceCalculator) HaversineDistance(lat1, lon1, lat2, lon2 float64) float64 {
+	const earthRadius = 6371
 
 	// Convert degrees to radians
 	lat1Rad := lat1 * math.Pi / 180
@@ -33,14 +30,11 @@ func (DistanceCalculator) haversineDistance(lat1, lon1, lat2, lon2 float64) floa
 	return earthRadius * c
 }
 
-// CalculateTourDistance calculates the total distance of a tour
-// based on the ordered sequence of key points
 func (dc DistanceCalculator) CalculateTourDistance(keyPoints []KeyPoint) float64 {
 	if len(keyPoints) < 2 {
 		return 0
 	}
 
-	// Sort key points by order to ensure correct sequence
 	sortedKeyPoints := make([]KeyPoint, len(keyPoints))
 	copy(sortedKeyPoints, keyPoints)
 	sort.Slice(sortedKeyPoints, func(i, j int) bool {
@@ -52,7 +46,7 @@ func (dc DistanceCalculator) CalculateTourDistance(keyPoints []KeyPoint) float64
 		current := sortedKeyPoints[i]
 		next := sortedKeyPoints[i+1]
 
-		distance := dc.haversineDistance(
+		distance := dc.HaversineDistance(
 			current.Latitude, current.Longitude,
 			next.Latitude, next.Longitude,
 		)
@@ -62,5 +56,4 @@ func (dc DistanceCalculator) CalculateTourDistance(keyPoints []KeyPoint) float64
 	return totalDistance
 }
 
-// Static instance for easy access
 var Calculator = DistanceCalculator{}

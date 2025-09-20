@@ -84,3 +84,27 @@ func (t *Tour) CanBeArchived() bool {
 func (t *Tour) CanBeUnarchived() bool {
 	return t.Status == TourStatusArchived
 }
+
+type TourExecution struct {
+	ID                  uint                 `json:"id" gorm:"primaryKey"`
+	TourID              uint                 `json:"tour_id" gorm:"not null"`
+	TouristUsername     string               `json:"tourist_username" gorm:"not null"`
+	Status              string               `json:"status" gorm:"default:'active'"` // active, completed, abandoned
+	StartTime           time.Time            `json:"start_time" gorm:"autoCreateTime"`
+	EndTime             *time.Time           `json:"end_time,omitempty"`
+	LastActivity        time.Time            `json:"last_activity" gorm:"autoUpdateTime"`
+	StartLatitude       float64              `json:"start_latitude"`
+	StartLongitude      float64              `json:"start_longitude"`
+	KeyPointCompletions []KeyPointCompletion `json:"key_point_completions" gorm:"foreignKey:TourExecutionID"`
+	CreatedAt           time.Time            `json:"created_at"`
+	UpdatedAt           time.Time            `json:"updated_at"`
+}
+
+type KeyPointCompletion struct {
+	ID              uint      `json:"id" gorm:"primaryKey"`
+	TourExecutionID uint      `json:"tour_execution_id" gorm:"not null"`
+	KeyPointID      uint      `json:"key_point_id" gorm:"not null"`
+	CompletedAt     time.Time `json:"completed_at" gorm:"autoCreateTime"`
+	Latitude        float64   `json:"latitude"`
+	Longitude       float64   `json:"longitude"`
+}

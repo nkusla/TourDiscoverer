@@ -18,7 +18,19 @@
             <router-link class="nav-link" to="/tours">Tours</router-link>
           </li>
           <li class="nav-item" v-if="isAuthenticated">
+            <router-link class="nav-link" to="/blogs">Blogs</router-link>
+          </li>
+          <li class="nav-item" v-if="isAuthenticated">
             <router-link class="nav-link" to="/tour/create">Create Tour</router-link>
+          </li>
+          <li class="nav-item" v-if="isAuthenticated">
+            <router-link class="nav-link" to="/blog/create">Create Blog</router-link>
+          </li>
+          <li class="nav-item" v-if="isTourist">
+            <router-link class="nav-link" to="/position-simulator">Position Simulator</router-link>
+          </li>
+          <li class="nav-item" v-if="isTourist">
+            <router-link class="nav-link" to="/tour-execution">Execute Tours</router-link>
           </li>
           <li class="nav-item" v-if="isAdmin">
             <router-link class="nav-link" to="/users">Users</router-link>
@@ -66,6 +78,10 @@ export default {
       return userStore.isAdmin
     })
 
+    const isTourist = computed(() => {
+      return userStore.user?.role === 'tourist'
+    })
+
     const toggleDropdown = () => {
       console.log('Dropdown clicked! Current state:', showDropdown.value)
       showDropdown.value = !showDropdown.value
@@ -82,6 +98,7 @@ export default {
       userStore,
       isAuthenticated,
       isAdmin,
+      isTourist,
       showDropdown,
       toggleDropdown,
       logout
