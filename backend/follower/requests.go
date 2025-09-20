@@ -7,6 +7,7 @@ type PingResponse struct {
 
 type CreateUserRequest struct {
 	Username string `json:"username" validate:"required"`
+	Role     string `json:"role" validate:"required,oneof=tourist guide"`
 }
 
 type FollowUserRequest struct {
