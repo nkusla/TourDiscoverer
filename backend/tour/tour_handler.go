@@ -534,11 +534,6 @@ func (h *TourHandler) GetExecutableToursForTourist(w http.ResponseWriter, r *htt
 		return
 	}
 
-	if err != nil {
-		h.sendErrorResponse(w, "Failed to get executable tours: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
 	response := GetToursResponse{
 		Tours: tours,
 		Count: len(tours),
