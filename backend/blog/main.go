@@ -25,7 +25,8 @@ func main() {
 	}
 	collection := client.Database("blog_db").Collection("blogs")
 	repo := &BlogRepository{collection: collection}
-	service := &BlogService{repository: repo}
+	httpClient := NewHTTPClient()
+	service := &BlogService{repository: repo, httpClient: httpClient}
 	handler := &BlogHandler{service: service}
 
 	// Create Gorilla Mux router

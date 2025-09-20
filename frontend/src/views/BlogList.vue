@@ -35,15 +35,25 @@
         <div class="mb-4">
           <i class="bi bi-journal-text display-1 text-muted"></i>
         </div>
-        <h4>No blogs yet</h4>
-        <p class="text-muted">Be the first to share your thoughts!</p>
-        <router-link 
-          v-if="userStore.isAuthenticated" 
-          to="/blog/create" 
-          class="btn btn-primary"
-        >
-          Create First Blog
-        </router-link>
+        <div v-if="!userStore.isAuthenticated">
+          <h4>Please log in to view blogs</h4>
+          <p class="text-muted">You need to be logged in to see blog posts from users you follow.</p>
+          <router-link to="/login" class="btn btn-primary">
+            Log In
+          </router-link>
+        </div>
+        <div v-else>
+          <h4>No blogs to show</h4>
+          <p class="text-muted">You can only see blogs from users you follow. Follow some users to see their blog posts, or create your own!</p>
+          <div class="d-flex gap-2 justify-content-center">
+            <router-link to="/users" class="btn btn-outline-primary">
+              Find Users to Follow
+            </router-link>
+            <router-link to="/blog/create" class="btn btn-primary">
+              Create Your First Blog
+            </router-link>
+          </div>
+        </div>
       </div>
 
       <!-- Blogs list -->

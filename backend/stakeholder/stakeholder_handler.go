@@ -104,14 +104,14 @@ func (h *StakeholderHandler) UpdateProfile(w http.ResponseWriter, r *http.Reques
 		file, header, err := r.FormFile("profile_picture")
 		if err == nil {
 			defer file.Close()
-			
+
 			// Read file content
 			fileBytes, err := io.ReadAll(file)
 			if err != nil {
 				http.Error(w, "Error reading uploaded file", http.StatusInternalServerError)
 				return
 			}
-			
+
 			// Convert to base64 with data URL format
 			mimeType := header.Header.Get("Content-Type")
 			if mimeType == "" {
@@ -130,13 +130,13 @@ func (h *StakeholderHandler) UpdateProfile(w http.ResponseWriter, r *http.Reques
 					mimeType = "image/jpeg" // default
 				}
 			}
-			
+
 			profilePictureData = fmt.Sprintf("data:%s;base64,%s", mimeType, base64.StdEncoding.EncodeToString(fileBytes))
 		} else {
 			// No file uploaded, keep existing profile picture
 			profilePictureData = r.FormValue("existing_profile_picture")
 		}
-		
+
 		req.ProfilePicture = profilePictureData
 	} else {
 		// Handle JSON request (backward compatibility)
@@ -176,7 +176,7 @@ func (h *StakeholderHandler) CreateStakeholderFromAuth(w http.ResponseWriter, r 
 	var req struct {
 		Username string `json:"username"`
 	}
-	
+
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
@@ -209,4 +209,99 @@ func (h *StakeholderHandler) CreateStakeholderFromAuth(w http.ResponseWriter, r 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(stakeholder)
+}
+
+func (h *StakeholderHandler) UpdatePosition(w http.ResponseWriter, r *http.Request) {
+	username := r.Header.Get("x-username")
+	userRole := r.Header.Get("x-user-role")
+
+	// Check if user is a tourist
+	if userRole != "tourist" {
+		http.Error(w, "Only tourists can update their position", http.StatusForbidden)
+		return
+	}
+
+	var request PositionUpdateRequest
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.validator.Struct(&request); err != nil {
+		http.Error(w, "Validation failed: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	position, err := h.service.UpdateTouristPosition(username, request.Latitude, request.Longitude)
+	if err != nil {
+		http.Error(w, "Failed to update position: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	response := PositionResponse{
+		Username:  position.Username,
+		Latitude:  position.Latitude,
+		Longitude: position.Longitude,
+		UpdatedAt: position.UpdatedAt,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
+}
+
+func (h *StakeholderHandler) GetPosition(w http.ResponseWriter, r *http.Request) {
+	username := r.Header.Get("x-username")
+	userRole := r.Header.Get("x-user-role")
+
+	// Check if user is a tourist
+	if userRole != "tourist" {
+		http.Error(w, "Only tourists can get their position", http.StatusForbidden)
+		return
+	}
+
+	position, err := h.service.GetTouristPosition(username)
+	if err != nil {
+		if err == ErrPositionNotFound {
+			// Return null instead of 404
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("null"))
+			return
+		}
+		http.Error(w, "Failed to get position: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	response := PositionResponse{
+		Username:  position.Username,
+		Latitude:  position.Latitude,
+		Longitude: position.Longitude,
+		UpdatedAt: position.UpdatedAt,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
+}
+func (h *StakeholderHandler) DeletePosition(w http.ResponseWriter, r *http.Request) {
+	username := r.Header.Get("x-username")
+	userRole := r.Header.Get("x-user-role")
+
+	if userRole != "tourist" {
+		http.Error(w, "Only tourists can delete their position", http.StatusForbidden)
+		return
+	}
+
+	err := h.service.DeleteTouristPosition(username)
+	if err != nil {
+		if err == ErrPositionNotFound {
+			http.Error(w, "Position not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, "Failed to delete position: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
