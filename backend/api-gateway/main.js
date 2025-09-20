@@ -112,6 +112,15 @@ api.use('/api/tours', validateJWT, createProxyMiddleware({
   },
 }));
 
+// TourExecution routes - protected for tourists
+api.use('/api/tour', validateJWT, createProxyMiddleware({
+  target: TOUR_SERVICE_URL,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api/tour': '',
+  },
+}));
+
 // Public blog routes (for reading blogs and comments)
 api.get('/api/blogs', createProxyMiddleware({
   target: BLOG_SERVICE_URL,

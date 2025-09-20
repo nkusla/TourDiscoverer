@@ -10,6 +10,7 @@ import Users from '../views/Users.vue'
 import BlogList from '../views/BlogList.vue'
 import CreateBlog from '../views/CreateBlog.vue'
 import PositionSimulator from '../views/PositionSimulator.vue'
+import TourExecution from '../views/TourExecution.vue'
 
 const routes = [
   {
@@ -69,6 +70,12 @@ const routes = [
     path: '/position-simulator',
     name: 'PositionSimulator',
     component: PositionSimulator,
+    meta: { requiresAuth: true, requiresTourist: true }
+  },
+  {
+    path: '/tour-execution',
+    name: 'TourExecution',
+    component: TourExecution,
     meta: { requiresAuth: true, requiresTourist: true }
   }
 ]

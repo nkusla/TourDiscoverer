@@ -23,3 +23,9 @@ const (
 	RoleGuide   = "guide"
 	RoleAdmin   = "admin"
 )
+
+const (
+	ExecutionStatusActive    = "active"
+	ExecutionStatusCompleted = "completed"
+	ExecutionStatusAbandoned = "abandoned"
+)

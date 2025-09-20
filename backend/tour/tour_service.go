@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 )
 
 type TourService struct {
@@ -337,4 +338,156 @@ func isValidDifficulty(difficulty string) bool {
 		}
 	}
 	return false
+}
+
+// TourExecution Service Methods
+
+const ProximityThresholdMeters = 1000.0 // 1 km proximity threshold for simulation
+
+func (service *TourService) StartTourExecution(request *StartTourExecutionRequest, touristUsername string) (*TourExecution, error) {
+	// Check if tourist already has an active tour execution
+	activeExecution, _ := service.repository.GetActiveTourExecution(touristUsername)
+	if activeExecution != nil {
+		return nil, errors.New("tourist already has an active tour execution")
+	}
+
+	// Verify tour exists and can be executed
+	tour, err := service.repository.GetTourByID(request.TourID)
+	if err != nil {
+		return nil, errors.New("tour not found")
+	}
+
+	if tour.Status != TourStatusPublished && tour.Status != TourStatusArchived {
+		return nil, errors.New("tour is not available for execution")
+	}
+
+	// Create new tour execution
+	execution := &TourExecution{
+		TourID:          request.TourID,
+		TouristUsername: touristUsername,
+		Status:          ExecutionStatusActive,
+		StartLatitude:   request.Latitude,
+		StartLongitude:  request.Longitude,
+	}
+
+	err = service.repository.StartTourExecution(execution)
+	if err != nil {
+		return nil, err
+	}
+
+	return execution, nil
+}
+
+func (service *TourService) GetActiveTourExecution(touristUsername string) (*TourExecution, error) {
+	return service.repository.GetActiveTourExecution(touristUsername)
+}
+
+func (service *TourService) EndTourExecution(executionID uint, status string, touristUsername string) (*TourExecution, error) {
+	// Verify execution belongs to the tourist
+	execution, err := service.repository.GetTourExecutionByID(executionID)
+	if err != nil {
+		return nil, errors.New("tour execution not found")
+	}
+
+	if execution.TouristUsername != touristUsername {
+		return nil, errors.New("unauthorized access to tour execution")
+	}
+
+	if execution.Status != ExecutionStatusActive {
+		return nil, errors.New("tour execution is not active")
+	}
+
+	if status != ExecutionStatusCompleted && status != ExecutionStatusAbandoned {
+		return nil, errors.New("invalid end status")
+	}
+
+	return service.repository.EndTourExecution(executionID, status)
+}
+
+func (service *TourService) CheckProximity(executionID uint, latitude, longitude float64, touristUsername string) (*CheckProximityResponse, error) {
+	// Verify execution belongs to the tourist
+	execution, err := service.repository.GetTourExecutionByID(executionID)
+	if err != nil {
+		return nil, errors.New("tour execution not found")
+	}
+
+	if execution.TouristUsername != touristUsername {
+		return nil, errors.New("unauthorized access to tour execution")
+	}
+
+	if execution.Status != ExecutionStatusActive {
+		return nil, errors.New("tour execution is not active")
+	}
+
+	// Update last activity regardless of proximity check result
+	execution.LastActivity = time.Now()
+	service.repository.UpdateTourExecution(execution)
+
+	// Get tour to access key points
+	tour, err := service.repository.GetTourByID(execution.TourID)
+	if err != nil {
+		return &CheckProximityResponse{
+			KeyPointReached: false,
+			LastActivity:    execution.LastActivity,
+			Message:         "Failed to load tour data",
+		}, nil
+	}
+
+	// Check proximity to each key point
+	fmt.Printf("DEBUG: Tourist position: lat=%f, lng=%f\n", latitude, longitude)
+	fmt.Printf("DEBUG: Checking proximity for %d key points\n", len(tour.KeyPoints))
+
+	for _, keyPoint := range tour.KeyPoints {
+		// Check if this key point is already completed
+		_, err := service.repository.GetKeyPointCompletion(execution.ID, keyPoint.ID)
+		if err == nil {
+			// Already completed, skip
+			fmt.Printf("DEBUG: KeyPoint '%s' already completed, skipping\n", keyPoint.Name)
+			continue
+		}
+
+		// Calculate distance using the existing haversine formula
+		distance := Calculator.HaversineDistance(latitude, longitude, keyPoint.Latitude, keyPoint.Longitude)
+		distanceMeters := distance * 1000 // Convert km to meters
+
+		fmt.Printf("DEBUG: KeyPoint '%s' at lat=%f, lng=%f - Distance: %.2f meters (threshold: %.2f)\n",
+			keyPoint.Name, keyPoint.Latitude, keyPoint.Longitude, distanceMeters, ProximityThresholdMeters)
+
+		if distanceMeters <= ProximityThresholdMeters {
+			// Tourist is within proximity of this key point
+			completion := &KeyPointCompletion{
+				TourExecutionID: execution.ID,
+				KeyPointID:      keyPoint.ID,
+				Latitude:        latitude,
+				Longitude:       longitude,
+			}
+
+			err = service.repository.CreateKeyPointCompletion(completion)
+			if err != nil {
+				return &CheckProximityResponse{
+					KeyPointReached: false,
+					LastActivity:    execution.LastActivity,
+					Message:         "Failed to record key point completion",
+				}, nil
+			}
+
+			return &CheckProximityResponse{
+				KeyPointReached:    true,
+				KeyPoint:           &keyPoint,
+				KeyPointCompletion: completion,
+				LastActivity:       execution.LastActivity,
+				Message:            fmt.Sprintf("Key point '%s' reached!", keyPoint.Name),
+			}, nil
+		}
+	}
+
+	return &CheckProximityResponse{
+		KeyPointReached: false,
+		LastActivity:    execution.LastActivity,
+		Message:         "No key points nearby",
+	}, nil
+}
+
+func (service *TourService) GetExecutableToursForTourist() ([]Tour, error) {
+	return service.repository.GetExecutableToursForTourist()
 }

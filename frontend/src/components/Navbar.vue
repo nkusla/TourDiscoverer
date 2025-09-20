@@ -29,6 +29,9 @@
           <li class="nav-item" v-if="isTourist">
             <router-link class="nav-link" to="/position-simulator">Position Simulator</router-link>
           </li>
+          <li class="nav-item" v-if="isTourist">
+            <router-link class="nav-link" to="/tour-execution">Execute Tours</router-link>
+          </li>
           <li class="nav-item" v-if="isAdmin">
             <router-link class="nav-link" to="/users">Users</router-link>
           </li>
