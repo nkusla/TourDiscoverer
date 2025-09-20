@@ -70,6 +70,31 @@ api.put('/api/stakeholder/profile', validateJWT, createProxyMiddleware({
   }
 }));
 
+// Protected position routes (for tourist position simulator)
+api.post('/api/stakeholder/position', validateJWT, createProxyMiddleware({
+  target: STAKEHOLDER_SERVICE_URL,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api/stakeholder/position': '/position',
+  }
+}));
+
+api.get('/api/stakeholder/position', validateJWT, createProxyMiddleware({
+  target: STAKEHOLDER_SERVICE_URL,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api/stakeholder/position': '/position',
+  }
+}));
+
+api.delete('/api/stakeholder/position', validateJWT, createProxyMiddleware({
+  target: STAKEHOLDER_SERVICE_URL,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api/stakeholder/position': '/position',
+  }
+}));
+
 // Public stakeholder routes (for creating profiles)
 api.use('/api/stakeholder', createProxyMiddleware({
   target: STAKEHOLDER_SERVICE_URL,
