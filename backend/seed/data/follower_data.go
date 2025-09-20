@@ -33,4 +33,8 @@ var Followers = []map[string]interface{}{
 		"follower": "tourist2",
 		"followee": "guide5",
 	},
+	{
+		"follower": "tourist1",
+		"followee": "tourist4",
+	},
 }

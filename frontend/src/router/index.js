@@ -7,6 +7,7 @@ import TourEditor from '../views/TourEditor.vue'
 import Login from '../views/Login.vue'
 import Profile from '../views/Profile.vue'
 import Users from '../views/Users.vue'
+import Recommendations from '../views/Recommendations.vue'
 
 const routes = [
   {
@@ -42,6 +43,12 @@ const routes = [
     path: '/profile',
     name: 'Profile',
     component: Profile,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/recommendations',
+    name: 'Recommendations',
+    component: Recommendations,
     meta: { requiresAuth: true }
   },
   {

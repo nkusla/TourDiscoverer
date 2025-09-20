@@ -20,6 +20,11 @@
           <li class="nav-item" v-if="isAuthenticated">
             <router-link class="nav-link" to="/tour/create">Create Tour</router-link>
           </li>
+          <li class="nav-item" v-if="isAuthenticated">
+            <router-link class="nav-link" to="/recommendations">
+              Discover Friends
+            </router-link>
+          </li>
           <li class="nav-item" v-if="isAdmin">
             <router-link class="nav-link" to="/users">Users</router-link>
           </li>
