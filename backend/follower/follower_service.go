@@ -4,8 +4,8 @@ type FollowerService struct {
 	repository *FollowerRepository
 }
 
-func (s *FollowerService) CreateUser(username string) error {
-	err := s.repository.CreateUser(username)
+func (s *FollowerService) CreateUser(username string, role string) error {
+	err := s.repository.CreateUser(username, role)
 	if err != nil {
 		return err
 	}
@@ -56,4 +56,13 @@ func (s *FollowerService) IsFollowing(follower string, followee string) (bool, e
 	}
 
 	return isFollowing, nil
+}
+
+func (s *FollowerService) GetRecommendations(username string) ([]User, error) {
+	recommendations, err := s.repository.GetRecommendations(username)
+	if err != nil {
+		return nil, err
+	}
+
+	return recommendations, nil
 }

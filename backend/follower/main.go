@@ -26,6 +26,7 @@ func main() {
 
 	r.HandleFunc("/user/{username}/followers", handler.GetFollowers).Methods(http.MethodGet)
 	r.HandleFunc("/user/{username}/following", handler.GetFollowing).Methods(http.MethodGet)
+	r.HandleFunc("/user/{username}/recommendations", handler.GetRecommendations).Methods(http.MethodGet)
 	r.HandleFunc("/user/{follower}/following/{followee}", handler.IsFollowing).Methods(http.MethodGet)
 
 	r.HandleFunc("/internal/user", handler.CreateUser).Methods(http.MethodPost)

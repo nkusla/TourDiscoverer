@@ -2,8 +2,8 @@ import axios from 'axios'
 
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: process.env.NODE_ENV === 'production' 
-    ? 'http://localhost:8080' 
+  baseURL: process.env.NODE_ENV === 'production'
+    ? 'http://localhost:8080'
     : 'http://localhost:8080', // Your API Gateway URL
   timeout: 10000,
   headers: {
@@ -44,7 +44,7 @@ api.interceptors.response.use(
       // Server error
       console.error('Server error:', error.response.data)
     }
-    
+
     return Promise.reject(error)
   }
 )

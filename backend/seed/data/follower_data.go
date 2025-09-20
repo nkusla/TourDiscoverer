@@ -21,4 +21,20 @@ var Followers = []map[string]interface{}{
 		"follower": "guide2",
 		"followee": "tourist3",
 	},
+	{
+		"follower": "tourist2",
+		"followee": "guide4",
+	},
+	{
+		"follower": "tourist3",
+		"followee": "guide4",
+	},
+	{
+		"follower": "tourist2",
+		"followee": "guide5",
+	},
+	{
+		"follower": "tourist1",
+		"followee": "tourist4",
+	},
 }

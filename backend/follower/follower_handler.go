@@ -27,7 +27,7 @@ func (h *FollowerHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := h.service.CreateUser(request.Username)
+	err := h.service.CreateUser(request.Username, request.Role)
 	if err != nil {
 		http.Error(w, "error creating user: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -143,4 +143,22 @@ func (h *FollowerHandler) Ping(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(PingResponse{Message: "pong", Service: "Follower Service"})
+}
+
+func (h *FollowerHandler) GetRecommendations(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	username := vars["username"]
+	if username == "" {
+		http.Error(w, "username parameter is required", http.StatusBadRequest)
+		return
+	}
+
+	recommendations, err := h.service.GetRecommendations(username)
+	if err != nil {
+		http.Error(w, "error retrieving recommendations: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(recommendations)
 }
