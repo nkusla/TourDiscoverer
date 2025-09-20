@@ -1,7 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
+	"net/http"
+	"os"
 	"strings"
 )
 
@@ -230,8 +234,61 @@ func (service *TourService) PublishTour(tourID uint, authorUsername string) erro
 	}
 
 	tour.Status = TourStatusPublished
+	err = service.repository.UpdateTour(tour)
+	if err != nil {
+		return err
+	}
 
-	return service.repository.UpdateTour(tour)
+	blogPayload := map[string]interface{}{
+		"title":       tour.Name,
+		"description": tour.Description,
+		"author":      tour.AuthorUsername,
+		"tour_id":     tour.ID,
+		"tags":        tour.Tags,
+	}
+
+	importBytes, _ := json.Marshal(blogPayload)
+
+	blogHost := os.Getenv("BLOG_SERVICE_HOST")
+	blogPort := os.Getenv("BLOG_SERVICE_PORT")
+	if blogHost == "" {
+		blogHost = "blog-service"
+	}
+	if blogPort == "" {
+		blogPort = "3002"
+	}
+	blogServiceURL := fmt.Sprintf("http://%s:%s/", blogHost, blogPort)
+
+	req, err := http.NewRequest(http.MethodPost, blogServiceURL, strings.NewReader(string(importBytes)))
+	if err != nil {
+		println("SAGA: Failed to create HTTP request:", err.Error())
+		tour.Status = TourStatusDraft
+		_ = service.repository.UpdateTour(tour)
+		return errors.New("failed to create blog post for published tour (SAGA rollback)")
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("x-username", tour.AuthorUsername)
+	req.Header.Set("x-user-role", RoleGuide)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		println("SAGA: Network error when calling Blog service:", err.Error())
+	}
+	if resp != nil {
+		println("SAGA: Blog service response status:", resp.StatusCode)
+		defer resp.Body.Close()
+		bodyBytes := make([]byte, 1024)
+		n, _ := resp.Body.Read(bodyBytes)
+		println("SAGA: Blog service response body:", string(bodyBytes[:n]))
+	}
+	if err != nil || (resp != nil && resp.StatusCode >= 300) {
+		tour.Status = TourStatusDraft
+		_ = service.repository.UpdateTour(tour)
+		return errors.New("failed to create blog post for published tour (SAGA rollback)")
+	}
+
+	return nil
 }
 
 func (service *TourService) ArchiveTour(tourID uint, authorUsername string) error {
