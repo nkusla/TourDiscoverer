@@ -136,6 +136,23 @@ services:
       timeout: 5s
       retries: 5
 
+  purchase-db:
+    profiles: ["db"]
+    image: postgres:16-alpine
+    container_name: td-purchase-db
+    hostname: ${PURCHASE_DB_HOST}
+    environment:
+      - POSTGRES_DB=${PURCHASE_DB_NAME}
+      - POSTGRES_USER=${PURCHASE_DB_USER}
+      - POSTGRES_PASSWORD=${PURCHASE_DB_PASSWORD}
+    ports:
+      - "${PURCHASE_DB_EXT_PORT}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PURCHASE_DB_USER} -d ${PURCHASE_DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   auth-service:
     profiles: ["service"]
     build:
@@ -247,6 +264,25 @@ services:
       - REVIEW_DB_PASSWORD=${REVIEW_DB_PASSWORD}
     ports:
       - "${REVIEW_SERVICE_PORT}:${REVIEW_SERVICE_PORT}"
+
+  purchase-service:
+    profiles: ["service"]
+    build:
+      context: ./backend/purchase
+      dockerfile: Dockerfile
+    image: td-purchase-service
+    container_name: td-purchase-service
+    hostname: ${PURCHASE_SERVICE_HOST}
+    environment:
+      - PORT=${PURCHASE_SERVICE_PORT}
+      - DB_HOST=${PURCHASE_DB_HOST}
+      - DB_PORT=5432
+      - DB_NAME=${PURCHASE_DB_NAME}
+      - DB_USER=${PURCHASE_DB_USER}
+      - DB_PASSWORD=${PURCHASE_DB_PASSWORD}
+      - TOUR_SERVICE_URL=http://${TOUR_SERVICE_HOST}:${TOUR_SERVICE_PORT}
+    ports:
+      - "${PURCHASE_SERVICE_PORT}:${PURCHASE_SERVICE_PORT}"
 
   frontend:
     profiles: ["service"]

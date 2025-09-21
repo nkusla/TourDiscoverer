@@ -4,18 +4,43 @@ const cors = require('cors');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const morgan = require('morgan');
 const { validateJWT, blockInternalRoutes, tracingMiddleware } = require('./middleware');
-const { AUTH_SERVICE_URL, STAKEHOLDER_SERVICE_URL, TOUR_SERVICE_URL, BLOG_SERVICE_URL, REVIEW_SERVICE_URL } = require('./constants');
+
+// Load environment variables before requiring constants so they use .env values
+const dotenv = require('dotenv');
+dotenv.config();
+
+const {
+  AUTH_SERVICE_URL,
+  TOUR_SERVICE_URL,
+  BLOG_SERVICE_URL,
+  FOLLOWER_SERVICE_URL,
+  STAKEHOLDER_SERVICE_URL,
+  REVIEW_SERVICE_URL,
+  PURCHASE_SERVICE_URL
+} = require('./constants');
 
 TracingManager.initTracer();
 
-const dotenv = require('dotenv');
-dotenv.config();
+// Debug logging for service URLs
+console.log('🔧 Service URLs Configuration:');
+console.log('AUTH_SERVICE_URL:', AUTH_SERVICE_URL);
+console.log('TOUR_SERVICE_URL:', TOUR_SERVICE_URL);
+console.log('BLOG_SERVICE_URL:', BLOG_SERVICE_URL);
+console.log('FOLLOWER_SERVICE_URL:', FOLLOWER_SERVICE_URL);
+console.log('STAKEHOLDER_SERVICE_URL:', STAKEHOLDER_SERVICE_URL);
+console.log('REVIEW_SERVICE_URL:', REVIEW_SERVICE_URL);
+console.log('PURCHASE_SERVICE_URL:', PURCHASE_SERVICE_URL);
 
 const api = express();
 
 // CORS configuration
 api.use(cors({
-  origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+  origin: [
+    'http://localhost:3000', 
+    'http://127.0.0.1:3000',
+    'http://localhost:5173',  // Vite dev server
+    'http://127.0.0.1:5173'   // Vite dev server
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -100,6 +125,15 @@ api.use('/api/reviews', validateJWT, createProxyMiddleware({
   changeOrigin: true,
   pathRewrite: {
     '^/api/reviews': '',
+  },
+}));
+
+
+api.use('/api/purchases', validateJWT, createProxyMiddleware({
+  target: PURCHASE_SERVICE_URL,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api/purchases': '',
   },
 }));
 
