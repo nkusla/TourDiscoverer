@@ -40,7 +40,7 @@
                 {{ userStore.user?.username || 'User' }} ▼
               </button>
               <div v-if="showDropdown" class="dropdown-content">
-                <router-link to="/profile" @click="showDropdown = false">Edit Profile</router-link>
+                <router-link to="/profile" @click="showDropdown = false">Profile</router-link>
                 <button @click="logout">Logout</button>
               </div>
             </div>
