@@ -43,4 +43,28 @@ var Users = []map[string]interface{}{
 		"email":    "guide3@gmail.com",
 		"role":     RoleGuide,
 	},
+	{
+		"username": "guide4",
+		"password": "guide4",
+		"email":    "guide4@gmail.com",
+		"role":     RoleGuide,
+	},
+	{
+		"username": "guide5",
+		"password": "guide5",
+		"email":    "guide5@gmail.com",
+		"role":     RoleGuide,
+	},
+	{
+		"username": "guide6",
+		"password": "guide6",
+		"email":    "guide6@gmail.com",
+		"role":     RoleGuide,
+	},
+	{
+		"username": "tourist4",
+		"password": "tourist4",
+		"email":    "tourist4@gmail.com",
+		"role":     RoleTourist,
+	},
 }

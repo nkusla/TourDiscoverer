@@ -4,7 +4,13 @@ const cors = require('cors');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const morgan = require('morgan');
 const { validateJWT, blockInternalRoutes, tracingMiddleware } = require('./middleware');
-const { AUTH_SERVICE_URL, STAKEHOLDER_SERVICE_URL, TOUR_SERVICE_URL, BLOG_SERVICE_URL, REVIEW_SERVICE_URL } = require('./constants');
+const {
+  AUTH_SERVICE_URL,
+  STAKEHOLDER_SERVICE_URL,
+  TOUR_SERVICE_URL,
+  BLOG_SERVICE_URL,
+  REVIEW_SERVICE_URL,
+  FOLLOWER_SERVICE_URL } = require('./constants');
 
 TracingManager.initTracer();
 
@@ -95,7 +101,6 @@ api.delete('/api/stakeholder/position', validateJWT, createProxyMiddleware({
   }
 }));
 
-// Public stakeholder routes (for creating profiles)
 api.use('/api/stakeholder', createProxyMiddleware({
   target: STAKEHOLDER_SERVICE_URL,
   changeOrigin: true,
@@ -161,6 +166,14 @@ api.use('/api/reviews', validateJWT, createProxyMiddleware({
   changeOrigin: true,
   pathRewrite: {
     '^/api/reviews': '',
+  },
+}));
+
+api.use('/api/followers', validateJWT, createProxyMiddleware({
+  target: FOLLOWER_SERVICE_URL,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api/followers': '',
   },
 }));
 

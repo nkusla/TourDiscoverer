@@ -11,6 +11,7 @@ import BlogList from '../views/BlogList.vue'
 import CreateBlog from '../views/CreateBlog.vue'
 import PositionSimulator from '../views/PositionSimulator.vue'
 import TourExecution from '../views/TourExecution.vue'
+import Recommendations from '../views/Recommendations.vue'
 
 const routes = [
   {
@@ -46,6 +47,12 @@ const routes = [
     path: '/profile',
     name: 'Profile',
     component: Profile,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/recommendations',
+    name: 'Recommendations',
+    component: Recommendations,
     meta: { requiresAuth: true }
   },
   {
