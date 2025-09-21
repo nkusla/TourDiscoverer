@@ -20,6 +20,11 @@
           <li class="nav-item" v-if="isAuthenticated">
             <router-link class="nav-link" to="/tour/create">Create Tour</router-link>
           </li>
+          <li class="nav-item" v-if="isAuthenticated">
+            <router-link class="nav-link" to="/recommendations">
+              Discover People
+            </router-link>
+          </li>
           <li class="nav-item" v-if="isAdmin">
             <router-link class="nav-link" to="/users">Users</router-link>
           </li>
@@ -35,7 +40,7 @@
                 {{ userStore.user?.username || 'User' }} ▼
               </button>
               <div v-if="showDropdown" class="dropdown-content">
-                <router-link to="/profile" @click="showDropdown = false">Edit Profile</router-link>
+                <router-link to="/profile" @click="showDropdown = false">Profile</router-link>
                 <button @click="logout">Logout</button>
               </div>
             </div>

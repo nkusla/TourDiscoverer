@@ -10,7 +10,7 @@ type FollowerRepository struct {
 	db *Database
 }
 
-func (r *FollowerRepository) CreateUser(username string) error {
+func (r *FollowerRepository) CreateUser(username string, role string) error {
 	ctx := context.Background()
 	session := r.db.Driver.NewSession(ctx, neo4j.SessionConfig{
 		AccessMode: neo4j.AccessModeWrite,
@@ -19,8 +19,8 @@ func (r *FollowerRepository) CreateUser(username string) error {
 	defer session.Close(ctx)
 
 	_, err := session.ExecuteWrite(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
-		query := "MERGE (u:User {username: $username})"
-		params := map[string]any{"username": username}
+		query := "MERGE (u:User {username: $username}) SET u.role = $role"
+		params := map[string]any{"username": username, "role": role}
 		result, err := tx.Run(ctx, query, params)
 		if err != nil {
 			return nil, err
@@ -93,7 +93,7 @@ func (r *FollowerRepository) GetFollowers(username string) ([]User, error) {
 	_, err := session.ExecuteRead(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
 		query := `
 			MATCH (u:User {username: $username})<-[:FOLLOWS]-(f:User)
-			RETURN f.username AS follower
+			RETURN f.username AS follower, f.role AS role
     `
 		params := map[string]any{"username": username}
 		result, err := tx.Run(ctx, query, params)
@@ -104,7 +104,17 @@ func (r *FollowerRepository) GetFollowers(username string) ([]User, error) {
 		for result.Next(ctx) {
 			record := result.Record()
 			followerUsername, _ := record.Get("follower")
-			followers = append(followers, User{Username: followerUsername.(string)})
+			followerRole, _ := record.Get("role")
+
+			role := ""
+			if followerRole != nil {
+				role = followerRole.(string)
+			}
+
+			followers = append(followers, User{
+				Username: followerUsername.(string),
+				Role:     role,
+			})
 		}
 
 		return nil, result.Err()
@@ -126,7 +136,7 @@ func (r *FollowerRepository) GetFollowing(username string) ([]User, error) {
 	_, err := session.ExecuteRead(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
 		query := `
 			MATCH (u:User {username: $username})-[:FOLLOWS]->(f:User)
-			RETURN f.username AS followee
+			RETURN f.username AS followee, f.role AS role
 		`
 		params := map[string]any{"username": username}
 		result, err := tx.Run(ctx, query, params)
@@ -137,7 +147,17 @@ func (r *FollowerRepository) GetFollowing(username string) ([]User, error) {
 		for result.Next(ctx) {
 			record := result.Record()
 			followeeUsername, _ := record.Get("followee")
-			following = append(following, User{Username: followeeUsername.(string)})
+			followeeRole, _ := record.Get("role")
+
+			role := ""
+			if followeeRole != nil {
+				role = followeeRole.(string)
+			}
+
+			following = append(following, User{
+				Username: followeeUsername.(string),
+				Role:     role,
+			})
 		}
 
 		return nil, result.Err()
@@ -177,4 +197,80 @@ func (r *FollowerRepository) IsFollowing(follower string, followee string) (bool
 	})
 
 	return exists, err
+}
+
+func (r *FollowerRepository) GetRecommendations(username string) ([]User, error) {
+	ctx := context.Background()
+	session := r.db.Driver.NewSession(ctx, neo4j.SessionConfig{
+		AccessMode: neo4j.AccessModeRead,
+	})
+
+	defer session.Close(ctx)
+
+	var recommendations []User
+
+	_, err := session.ExecuteRead(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
+		query := `
+			MATCH (me:User {username: $username})-[:FOLLOWS]->(friend:User)-[:FOLLOWS]->(recommendation:User)
+			WHERE NOT (me)-[:FOLLOWS]->(recommendation) AND recommendation.username <> $username
+			RETURN DISTINCT recommendation.username AS username, recommendation.role AS role, COUNT(*) AS mutualConnections
+			ORDER BY mutualConnections DESC
+			LIMIT 10
+		`
+		params := map[string]any{"username": username}
+		result, err := tx.Run(ctx, query, params)
+		if err != nil {
+			return nil, err
+		}
+
+		for result.Next(ctx) {
+			record := result.Record()
+			recommendationUsername, _ := record.Get("username")
+			recommendationRole, _ := record.Get("role")
+
+			role := ""
+			if recommendationRole != nil {
+				role = recommendationRole.(string)
+			}
+
+			recommendations = append(recommendations, User{
+				Username: recommendationUsername.(string),
+				Role:     role,
+			})
+		}
+
+		if len(recommendations) == 0 {
+			fallbackQuery := `
+				MATCH (u:User)
+				WHERE u.username <> $username AND NOT (:User {username: $username})-[:FOLLOWS]->(u)
+				RETURN u.username AS username, u.role AS role
+				ORDER BY rand()
+				LIMIT 10
+			`
+			fallbackResult, err := tx.Run(ctx, fallbackQuery, params)
+			if err != nil {
+				return nil, err
+			}
+
+			for fallbackResult.Next(ctx) {
+				record := fallbackResult.Record()
+				recommendationUsername, _ := record.Get("username")
+				recommendationRole, _ := record.Get("role")
+
+				role := ""
+				if recommendationRole != nil {
+					role = recommendationRole.(string)
+				}
+
+				recommendations = append(recommendations, User{
+					Username: recommendationUsername.(string),
+					Role:     role,
+				})
+			}
+		}
+
+		return nil, result.Err()
+	})
+
+	return recommendations, err
 }
