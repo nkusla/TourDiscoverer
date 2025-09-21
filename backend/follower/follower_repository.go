@@ -239,6 +239,36 @@ func (r *FollowerRepository) GetRecommendations(username string) ([]User, error)
 			})
 		}
 
+		if len(recommendations) == 0 {
+			fallbackQuery := `
+				MATCH (u:User)
+				WHERE u.username <> $username AND NOT (:User {username: $username})-[:FOLLOWS]->(u)
+				RETURN u.username AS username, u.role AS role
+				ORDER BY rand()
+				LIMIT 10
+			`
+			fallbackResult, err := tx.Run(ctx, fallbackQuery, params)
+			if err != nil {
+				return nil, err
+			}
+
+			for fallbackResult.Next(ctx) {
+				record := fallbackResult.Record()
+				recommendationUsername, _ := record.Get("username")
+				recommendationRole, _ := record.Get("role")
+
+				role := ""
+				if recommendationRole != nil {
+					role = recommendationRole.(string)
+				}
+
+				recommendations = append(recommendations, User{
+					Username: recommendationUsername.(string),
+					Role:     role,
+				})
+			}
+		}
+
 		return nil, result.Err()
 	})
 
