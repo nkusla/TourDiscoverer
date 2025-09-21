@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -363,6 +364,184 @@ func (h *TourHandler) UnarchiveTour(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func (h *TourHandler) StartTourExecution(w http.ResponseWriter, r *http.Request) {
+	username := r.Header.Get("x-username")
+	userRole := r.Header.Get("x-user-role")
+
+	if userRole != RoleTourist {
+		h.sendErrorResponse(w, "Only tourists can execute tours", http.StatusForbidden)
+		return
+	}
+
+	var request StartTourExecutionRequest
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		h.sendErrorResponse(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if err := validate.Struct(&request); err != nil {
+		h.sendErrorResponse(w, "Validation failed: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	execution, err := h.service.StartTourExecution(&request, username)
+	if err != nil {
+		h.sendErrorResponse(w, "Failed to start tour execution: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	response := StartTourExecutionResponse{
+		ID:              execution.ID,
+		TourID:          execution.TourID,
+		TouristUsername: execution.TouristUsername,
+		Status:          execution.Status,
+		StartTime:       execution.StartTime,
+		StartLatitude:   execution.StartLatitude,
+		StartLongitude:  execution.StartLongitude,
+		Message:         "Tour execution started successfully",
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(response)
+}
+
+func (h *TourHandler) GetActiveTourExecution(w http.ResponseWriter, r *http.Request) {
+	username := r.Header.Get("x-username")
+	userRole := r.Header.Get("x-user-role")
+
+	if userRole != RoleTourist {
+		h.sendErrorResponse(w, "Only tourists can access tour executions", http.StatusForbidden)
+		return
+	}
+
+	execution, err := h.service.GetActiveTourExecution(username)
+	if err != nil {
+		h.sendErrorResponse(w, "No active tour execution found", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(execution)
+}
+
+func (h *TourHandler) EndTourExecution(w http.ResponseWriter, r *http.Request) {
+	username := r.Header.Get("x-username")
+	userRole := r.Header.Get("x-user-role")
+
+	if userRole != RoleTourist {
+		h.sendErrorResponse(w, "Only tourists can end tour executions", http.StatusForbidden)
+		return
+	}
+
+	vars := mux.Vars(r)
+	executionID, err := strconv.ParseUint(vars["id"], 10, 32)
+	if err != nil {
+		h.sendErrorResponse(w, "Invalid execution ID", http.StatusBadRequest)
+		return
+	}
+
+	var request EndTourExecutionRequest
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		h.sendErrorResponse(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if err := validate.Struct(&request); err != nil {
+		h.sendErrorResponse(w, "Validation failed: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	execution, err := h.service.EndTourExecution(uint(executionID), request.Status, username)
+	if err != nil {
+		h.sendErrorResponse(w, "Failed to end tour execution: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	response := EndTourExecutionResponse{
+		ID:              execution.ID,
+		TourID:          execution.TourID,
+		TouristUsername: execution.TouristUsername,
+		Status:          execution.Status,
+		StartTime:       execution.StartTime,
+		EndTime:         execution.EndTime,
+		Message:         "Tour execution ended successfully",
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
+}
+
+func (h *TourHandler) CheckProximity(w http.ResponseWriter, r *http.Request) {
+	username := r.Header.Get("x-username")
+	userRole := r.Header.Get("x-user-role")
+
+	if userRole != RoleTourist {
+		h.sendErrorResponse(w, "Only tourists can check proximity", http.StatusForbidden)
+		return
+	}
+
+	vars := mux.Vars(r)
+	executionID, err := strconv.ParseUint(vars["id"], 10, 32)
+	if err != nil {
+		h.sendErrorResponse(w, "Invalid execution ID", http.StatusBadRequest)
+		return
+	}
+
+	var request CheckProximityRequest
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		h.sendErrorResponse(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if err := validate.Struct(&request); err != nil {
+		h.sendErrorResponse(w, "Validation failed: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	response, err := h.service.CheckProximity(uint(executionID), request.Latitude, request.Longitude, username)
+	if err != nil {
+		h.sendErrorResponse(w, "Failed to check proximity: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
+}
+
+func (h *TourHandler) GetExecutableToursForTourist(w http.ResponseWriter, r *http.Request) {
+	userRole := r.Header.Get("x-user-role")
+	username := r.Header.Get("x-username")
+
+	// Debug logging
+	log.Printf("GetExecutableToursForTourist - userRole: '%s', username: '%s'", userRole, username)
+
+	if userRole != RoleTourist {
+		log.Printf("Access denied - expected '%s', got '%s'", RoleTourist, userRole)
+		h.sendErrorResponse(w, "Only tourists can access executable tours", http.StatusForbidden)
+		return
+	}
+
+	tours, err := h.service.GetExecutableToursForTourist()
+	if err != nil {
+		log.Printf("Error getting executable tours: %v", err)
+		h.sendErrorResponse(w, "Failed to get executable tours: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	response := GetToursResponse{
+		Tours: tours,
+		Count: len(tours),
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
 }
 
 func (h *TourHandler) Ping(w http.ResponseWriter, _ *http.Request) {

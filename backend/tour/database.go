@@ -27,8 +27,7 @@ func InitDatabase() *gorm.DB {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	// AutoMigrate tour-related models
-	db.AutoMigrate(&Tour{}, &KeyPoint{})
+	db.AutoMigrate(&Tour{}, &KeyPoint{}, &TourExecution{}, &KeyPointCompletion{})
 
 	return db
 }

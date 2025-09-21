@@ -7,6 +7,10 @@ import TourEditor from '../views/TourEditor.vue'
 import Login from '../views/Login.vue'
 import Profile from '../views/Profile.vue'
 import Users from '../views/Users.vue'
+import BlogList from '../views/BlogList.vue'
+import CreateBlog from '../views/CreateBlog.vue'
+import PositionSimulator from '../views/PositionSimulator.vue'
+import TourExecution from '../views/TourExecution.vue'
 import Recommendations from '../views/Recommendations.vue'
 
 const routes = [
@@ -56,6 +60,30 @@ const routes = [
     name: 'Users',
     component: Users,
     meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/blogs',
+    name: 'BlogList',
+    component: BlogList,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/blog/create',
+    name: 'CreateBlog',
+    component: CreateBlog,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/position-simulator',
+    name: 'PositionSimulator',
+    component: PositionSimulator,
+    meta: { requiresAuth: true, requiresTourist: true }
+  },
+  {
+    path: '/tour-execution',
+    name: 'TourExecution',
+    component: TourExecution,
+    meta: { requiresAuth: true, requiresTourist: true }
   }
 ]
 
@@ -88,6 +116,12 @@ router.beforeEach((to, from, next) => {
 
   // Check if route requires guest (like login page)
   if (to.meta.requiresGuest && userStore.isAuthenticated) {
+    next('/')
+    return
+  }
+
+  // Check if route requires tourist privileges
+  if (to.meta.requiresTourist && userStore.user?.role !== 'tourist') {
     next('/')
     return
   }

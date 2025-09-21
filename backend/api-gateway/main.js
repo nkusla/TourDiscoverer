@@ -76,6 +76,31 @@ api.put('/api/stakeholder/profile', validateJWT, createProxyMiddleware({
   }
 }));
 
+// Protected position routes (for tourist position simulator)
+api.post('/api/stakeholder/position', validateJWT, createProxyMiddleware({
+  target: STAKEHOLDER_SERVICE_URL,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api/stakeholder/position': '/position',
+  }
+}));
+
+api.get('/api/stakeholder/position', validateJWT, createProxyMiddleware({
+  target: STAKEHOLDER_SERVICE_URL,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api/stakeholder/position': '/position',
+  }
+}));
+
+api.delete('/api/stakeholder/position', validateJWT, createProxyMiddleware({
+  target: STAKEHOLDER_SERVICE_URL,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api/stakeholder/position': '/position',
+  }
+}));
+
 api.use('/api/stakeholder', createProxyMiddleware({
   target: STAKEHOLDER_SERVICE_URL,
   changeOrigin: true,
@@ -92,6 +117,42 @@ api.use('/api/tours', validateJWT, createProxyMiddleware({
   },
 }));
 
+// TourExecution routes - protected for tourists
+api.use('/api/tour', validateJWT, createProxyMiddleware({
+  target: TOUR_SERVICE_URL,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api/tour': '',
+  },
+}));
+
+// Public blog routes (for reading blogs and comments)
+api.get('/api/blogs', createProxyMiddleware({
+  target: BLOG_SERVICE_URL,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api/blogs': '',
+  },
+}));
+
+// Protected blog routes for authenticated users to get personalized blogs
+api.get('/api/blogs/personalized', validateJWT, createProxyMiddleware({
+  target: BLOG_SERVICE_URL,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api/blogs/personalized': '',
+  },
+}));
+
+api.get('/api/blogs/comments', createProxyMiddleware({
+  target: BLOG_SERVICE_URL,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api/blogs': '',
+  },
+}));
+
+// Protected blog routes (for creating, liking, commenting)
 api.use('/api/blogs', validateJWT, createProxyMiddleware({
   target: BLOG_SERVICE_URL,
   changeOrigin: true,
