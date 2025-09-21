@@ -29,12 +29,6 @@
       <div class="card border-0 bg-light">
         <div class="card-body py-5">
           <h3 class="text-muted">No recommendations yet</h3>
-          <p class="text-muted">
-            Start following some people to get personalized recommendations!
-          </p>
-          <router-link to="/users" class="btn btn-primary">
-            Browse Users
-          </router-link>
         </div>
       </div>
     </div>

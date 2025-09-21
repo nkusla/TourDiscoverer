@@ -127,9 +127,6 @@
                     <!-- Empty state -->
                     <div v-if="followers.length === 0 && following.length === 0" class="text-muted text-center py-3">
                       <p>No social connections yet. Start following people to build your network!</p>
-                      <router-link to="/users" class="btn btn-sm btn-outline-primary">
-                        Browse Users
-                      </router-link>
                     </div>
                   </div>
                 </div>
@@ -290,9 +287,7 @@
             <div v-if="following.length === 0" class="text-center py-4">
               <i class="fas fa-user-plus fa-3x text-muted mb-3"></i>
               <p class="text-muted">You're not following anyone yet</p>
-              <router-link to="/users" class="btn btn-primary btn-sm" data-bs-dismiss="modal">
-                Browse Users
-              </router-link>
+              <p>Start exploring and connecting with others!</p>
             </div>
             <div v-else class="row">
               <div
@@ -528,7 +523,7 @@ export default {
       saveProfile,
       handleFileChange,
       confirmLogout,
-      unfollowUser
+      unfollowUser,
     }
   }
 }
