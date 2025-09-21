@@ -3,14 +3,15 @@ package main
 import "time"
 
 type CreateTourRequest struct {
-	Name        string                  `json:"name" validate:"required"`
-	Description string                  `json:"description"`
-	Difficulty  string                  `json:"difficulty" validate:"required,oneof=easy medium hard"`
-	Tags        string                  `json:"tags"`
-	KeyPoints   []CreateKeyPointRequest `json:"key_points"`
-	Distance    float64                 `json:"distance"`
-	Status      string                  `json:"status"`
-	Price       float64                 `json:"price"`
+	Name             string                  `json:"name" validate:"required"`
+	Description      string                  `json:"description"`
+	Difficulty       string                  `json:"difficulty" validate:"required,oneof=easy medium hard"`
+	Tags             string                  `json:"tags"`
+	TransportDetails []Transport             `json:"transport_details"`
+	KeyPoints        []CreateKeyPointRequest `json:"key_points"`
+	Distance         float64                 `json:"distance"`
+	Status           string                  `json:"status"`
+	Price            float64                 `json:"price"`
 }
 
 type UpdateTourRequest struct {

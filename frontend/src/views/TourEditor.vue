@@ -72,6 +72,59 @@
                 />
               </div>
 
+              <!-- Transportation Details -->
+              <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <h6>Transportation Details ({{ transportDetails.length }})</h6>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-primary"
+                    @click="addTransportDetail"
+                  >
+                    + Add
+                  </button>
+                </div>
+
+                <div class="transport-details-list" style="max-height: 200px; overflow-y: auto;">
+                  <div
+                    v-for="(transport, index) in transportDetails"
+                    :key="index"
+                    class="card mb-2"
+                  >
+                    <div class="card-body p-2">
+                      <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                          <div class="fw-bold">{{ transport.transport_type }}</div>
+                          <small class="text-muted">Duration: {{ transport.duration }} minutes</small>
+                        </div>
+                        <div class="btn-group">
+                          <button
+                            type="button"
+                            class="btn btn-sm btn-outline-primary"
+                            @click="editTransportDetail(index)"
+                            title="Edit transport detail"
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            type="button"
+                            class="btn btn-sm btn-outline-danger"
+                            @click="removeTransportDetail(index)"
+                            title="Delete transport detail"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="alert alert-info" v-if="transportDetails.length === 0">
+                    <small>Add transportation details to help users understand travel between key points</small>
+                  </div>
+                </div>
+              </div>
+
               <!-- Key Points List -->
               <div class="mb-3">
                 <h6>Key Points ({{ keyPoints.length }})</h6>
@@ -192,6 +245,74 @@
       </div>
     </div>
 
+    <!-- Edit Transport Detail Modal -->
+    <div
+      class="modal fade"
+      id="editTransportModal"
+      tabindex="-1"
+      ref="editTransportModal"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">{{ editingTransportIndex >= 0 ? 'Edit' : 'Add' }} Transportation Detail</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <form>
+              <div class="mb-3">
+                <label class="form-label">Transport Type *</label>
+                <select
+                  v-model="editingTransport.transport_type"
+                  class="form-select"
+                  required
+                >
+                  <option value="">Select transport type...</option>
+                  <option value="walking">Walking</option>
+                  <option value="cycling">Cycling</option>
+                  <option value="driving">Driving</option>
+                  <option value="public_transport">Public Transport</option>
+                  <option value="boat">Boat</option>
+                  <option value="train">Train</option>
+                  <option value="flight">Flight</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Duration (minutes) *</label>
+                <input
+                  v-model.number="editingTransport.duration"
+                  type="number"
+                  class="form-control"
+                  min="1"
+                  required
+                  placeholder="Enter duration in minutes"
+                />
+              </div>
+
+              <div class="alert alert-info">
+                <small>💡 This represents the estimated travel time between key points using this transport method.</small>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+              Cancel
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary"
+              @click="saveTransportEdit"
+              :disabled="!editingTransport.transport_type || !editingTransport.duration"
+            >
+              {{ editingTransportIndex >= 0 ? 'Update' : 'Add' }} Transport
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Edit Key Point Modal -->
     <div
       class="modal fade"
@@ -302,18 +423,28 @@ export default {
     })
 
     const keyPoints = ref([])
+    const transportDetails = ref([])
     const selectedKeyPointIndex = ref(-1)
     const editingKeyPoint = ref({})
     const editingKeyPointIndex = ref(-1)
     const isEditingPosition = ref(false)
 
+    // Transport editing
+    const editingTransport = ref({
+      transport_type: '',
+      duration: null
+    })
+    const editingTransportIndex = ref(-1)
+
     const isLoading = ref(false)
     const successMessage = ref('')
     const errorMessage = ref('')
 
-    // Modal reference
+    // Modal references
     const editModal = ref(null)
+    const editTransportModal = ref(null)
     let editModalInstance = null
+    let editTransportModalInstance = null
 
     // Computed
     const isEditMode = computed(() => !!props.id)
@@ -365,10 +496,64 @@ export default {
         }
 
         keyPoints.value = tour.key_points || []
+        transportDetails.value = tour.transport_details || []
       } catch (error) {
         errorMessage.value = 'Failed to load tour: ' + error.message
       } finally {
         isLoading.value = false
+      }
+    }
+
+    // Transport methods
+    const addTransportDetail = () => {
+      editingTransportIndex.value = -1
+      editingTransport.value = {
+        transport_type: '',
+        duration: null
+      }
+
+      if (editTransportModalInstance) {
+        editTransportModalInstance.show()
+      }
+    }
+
+    const editTransportDetail = (index) => {
+      editingTransportIndex.value = index
+      editingTransport.value = { ...transportDetails.value[index] }
+
+      if (editTransportModalInstance) {
+        editTransportModalInstance.show()
+      }
+    }
+
+    const removeTransportDetail = (index) => {
+      if (confirm('Are you sure you want to delete this transportation detail?')) {
+        transportDetails.value.splice(index, 1)
+      }
+    }
+
+    const saveTransportEdit = () => {
+      if (!editingTransport.value.transport_type || !editingTransport.value.duration) {
+        return
+      }
+
+      if (editingTransportIndex.value >= 0) {
+        // Update existing transport detail
+        transportDetails.value[editingTransportIndex.value] = { ...editingTransport.value }
+      } else {
+        // Add new transport detail
+        transportDetails.value.push({ ...editingTransport.value })
+      }
+
+      // Reset editing state
+      editingTransportIndex.value = -1
+      editingTransport.value = {
+        transport_type: '',
+        duration: null
+      }
+
+      if (editTransportModalInstance) {
+        editTransportModalInstance.hide()
       }
     }
 
@@ -460,6 +645,7 @@ export default {
             ...point,
             order: index
           })),
+          transport_details: transportDetails.value,
           distance: totalDistance.value,
           status: 'draft',
           price: isEditMode.value ? tourData.value.price : 0
@@ -496,6 +682,7 @@ export default {
           tags: ''
         }
         keyPoints.value = []
+        transportDetails.value = []
         selectedKeyPointIndex.value = -1
         errorMessage.value = ''
         successMessage.value = ''
@@ -508,9 +695,12 @@ export default {
 
     // Lifecycle
     onMounted(async () => {
-      // Initialize Bootstrap modal
+      // Initialize Bootstrap modals
       if (editModal.value) {
         editModalInstance = new Modal(editModal.value)
+      }
+      if (editTransportModal.value) {
+        editTransportModalInstance = new Modal(editTransportModal.value)
       }
 
       // Load tour data if editing
@@ -522,12 +712,16 @@ export default {
     return {
       tourData,
       keyPoints,
+      transportDetails,
       selectedKeyPointIndex,
       editingKeyPoint,
+      editingTransport,
+      editingTransportIndex,
       isLoading,
       successMessage,
       errorMessage,
       editModal,
+      editTransportModal,
       isEditMode,
       totalDistance,
       canSave,
@@ -538,6 +732,10 @@ export default {
       moveKeyPoint,
       onMapClick,
       saveKeyPointEdit,
+      addTransportDetail,
+      editTransportDetail,
+      removeTransportDetail,
+      saveTransportEdit,
       saveTour,
       clearAll,
       goBack

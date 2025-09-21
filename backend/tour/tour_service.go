@@ -41,7 +41,7 @@ func (service *TourService) CreateTour(request *CreateTourRequest, authorUsernam
 		Status:           TourStatusDraft,
 		Price:            0, // Always 0 for draft
 		AuthorUsername:   authorUsername,
-		TransportDetails: []Transport{},
+		TransportDetails: request.TransportDetails,
 		Distance:         request.Distance,
 		KeyPoints:        keyPoints, // GORM will handle the association
 	}
@@ -139,15 +139,23 @@ func (service *TourService) UpdateTour(id uint, request *UpdateTourRequest, auth
 	}
 
 	// Update the tour itself (without trying to save associations again)
-	result = tx.Model(&tour).Select("name", "description", "difficulty", "tags", "price", "distance", "transport_details").Updates(map[string]interface{}{
-		"name":              tour.Name,
-		"description":       tour.Description,
-		"difficulty":        tour.Difficulty,
-		"tags":              tour.Tags,
-		"price":             tour.Price,
-		"distance":          tour.Distance,
-		"transport_details": tour.TransportDetails,
+	// Note: We don't include transport_details in Select/Updates to avoid JSONB serialization issues
+	// GORM will handle it properly when we save the entire model
+	result = tx.Model(&tour).Select("name", "description", "difficulty", "tags", "price", "distance").Updates(map[string]interface{}{
+		"name":        tour.Name,
+		"description": tour.Description,
+		"difficulty":  tour.Difficulty,
+		"tags":        tour.Tags,
+		"price":       tour.Price,
+		"distance":    tour.Distance,
 	})
+	if result.Error != nil {
+		tx.Rollback()
+		return nil, result.Error
+	}
+
+	// Update transport_details separately using Save to ensure proper JSONB serialization
+	result = tx.Model(&tour).Select("transport_details").Updates(Tour{TransportDetails: tour.TransportDetails})
 	if result.Error != nil {
 		tx.Rollback()
 		return nil, result.Error
