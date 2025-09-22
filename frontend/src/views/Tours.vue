@@ -3,22 +3,22 @@
     <div class="container py-4">
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Tours</h2>
-        <router-link 
-          to="/tour/create" 
+        <router-link
+          to="/tour/create"
           class="btn btn-primary"
           v-if="userStore.canCreateTours"
         >
           <i class="fas fa-plus"></i> Create New Tour
         </router-link>
       </div>
-      
+
       <!-- Filters -->
       <div class="row mb-4">
         <div class="col-md-4">
-          <input 
-            v-model="searchQuery" 
-            type="text" 
-            class="form-control" 
+          <input
+            v-model="searchQuery"
+            type="text"
+            class="form-control"
             placeholder="Search tours..."
           />
         </div>
@@ -36,6 +36,7 @@
             <option value="">All Statuses</option>
             <option value="draft">Draft</option>
             <option value="published">Published</option>
+            <option value="archived">Archived</option>
           </select>
         </div>
         <div class="col-md-2">
@@ -44,40 +45,40 @@
           </button>
         </div>
       </div>
-      
+
       <!-- Loading state -->
       <div v-if="loading" class="text-center py-5">
         <div class="spinner-border" role="status">
           <span class="visually-hidden">Loading...</span>
         </div>
       </div>
-      
+
       <!-- Tours grid -->
       <div v-else-if="filteredTours.length > 0" class="row">
-        <div 
-          v-for="tour in filteredTours" 
-          :key="tour.id" 
+        <div
+          v-for="tour in filteredTours"
+          :key="tour.id"
           class="col-lg-4 col-md-6 mb-4"
         >
           <div class="card h-100">
             <div class="card-body">
               <div class="d-flex justify-content-between align-items-start mb-2">
                 <h5 class="card-title">{{ tour.name }}</h5>
-                <span 
+                <span
                   class="badge"
                   :class="getStatusBadgeClass(tour.status)"
                 >
                   {{ tour.status }}
                 </span>
               </div>
-              
+
               <p class="card-text text-muted">
                 {{ truncateText(tour.description, 100) }}
               </p>
-              
+
               <div class="mb-3">
                 <small class="text-muted">
-                  <strong>Difficulty:</strong> 
+                  <strong>Difficulty:</strong>
                   <span class="text-capitalize">{{ tour.difficulty }}</span>
                 </small>
                 <br>
@@ -93,58 +94,58 @@
                   <strong>Price:</strong> ${{ tour.price || 0 }}
                 </small>
               </div>
-              
+
               <div class="mb-2">
                 <small class="text-muted">
                   <strong>Tags:</strong> {{ tour.tags }}
                 </small>
               </div>
-              
+
               <div class="mb-3">
                 <small class="text-muted">
-                  By {{ tour.author_username }} • 
+                  By {{ tour.author_username }} •
                   {{ formatDate(tour.created_at) }}
                 </small>
               </div>
             </div>
-            
+
             <div class="card-footer bg-transparent">
               <div class="d-grid gap-2">
                 <!-- Main Actions -->
                 <div class="btn-group" role="group">
-                  <button 
+                  <button
                     class="btn btn-outline-primary"
                     @click="viewTour(tour)"
                   >
                     View
                   </button>
-                  <router-link 
+                  <router-link
                     :to="`/tour/edit/${tour.id}`"
                     class="btn btn-outline-secondary"
                     v-if="canEdit(tour)"
                   >
                     Edit
                   </router-link>
-                  <button 
+                  <button
                     v-if="canEdit(tour) && tour.status === 'draft'"
                     class="btn btn-outline-success"
                     @click="publishTour(tour)"
                   >
                     Publish
                   </button>
-                  <button 
+                  <button
                     v-if="canEdit(tour) && tour.status === 'published'"
-                    class="btn btn-outline-warning"
-                    @click="unpublishTour(tour)"
+                    class="btn btn-outline-info"
+                    @click="archiveTour(tour)"
                   >
-                    Unpublish
+                    Archive
                   </button>
-                  <button 
-                    class="btn btn-outline-danger"
-                    @click="deleteTour(tour)"
-                    v-if="canDelete(tour)"
+                  <button
+                    v-if="canEdit(tour) && tour.status === 'archived'"
+                    class="btn btn-outline-warning"
+                    @click="unarchiveTour(tour)"
                   >
-                    Delete
+                    Unarchive
                   </button>
                 </div>
                 
@@ -178,14 +179,14 @@
                 
                 <!-- Review Actions -->
                 <div class="btn-group" role="group">
-                  <button 
+                  <button
                     class="btn btn-success btn-sm"
                     @click="openReviewForm(tour)"
                     v-if="userStore.isAuthenticated"
                   >
                     <i class="fas fa-star me-1"></i>Leave Review
                   </button>
-                  <button 
+                  <button
                     class="btn btn-info btn-sm"
                     @click="openReviewList(tour)"
                   >
@@ -197,30 +198,30 @@
           </div>
         </div>
       </div>
-      
+
       <!-- Empty state -->
       <div v-else class="text-center py-5">
         <i class="fas fa-map fa-3x text-muted mb-3"></i>
         <h4 class="text-muted">No tours found</h4>
         <p class="text-muted">
-          {{ searchQuery || difficultyFilter || statusFilter 
-             ? 'Try adjusting your filters' 
+          {{ searchQuery || difficultyFilter || statusFilter
+             ? 'Try adjusting your filters'
              : (userStore.canCreateTours ? 'Create your first tour to get started' : 'No tours available at the moment') }}
         </p>
-        <router-link 
-          to="/tour/create" 
-          class="btn btn-primary" 
+        <router-link
+          to="/tour/create"
+          class="btn btn-primary"
           v-if="!searchQuery && !difficultyFilter && !statusFilter && userStore.canCreateTours"
         >
           Create Tour
         </router-link>
       </div>
     </div>
-    
+
     <!-- View Tour Modal -->
-    <div 
-      class="modal fade" 
-      id="viewTourModal" 
+    <div
+      class="modal fade"
+      id="viewTourModal"
       tabindex="-1"
       ref="viewModal"
     >
@@ -268,7 +269,7 @@
                   Key points are hidden. Purchase this tour to view the complete route.
                 </div>
               </div>
-              
+
               <div class="col-md-6">
                 <h6>Tour Route</h6>
                 <div v-if="isPurchased(selectedTour.id)">
@@ -302,7 +303,7 @@
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
               Close
             </button>
-            <router-link 
+            <router-link
               :to="`/tour/edit/${selectedTour?.id}`"
               class="btn btn-primary"
               v-if="selectedTour && canEdit(selectedTour)"
@@ -314,17 +315,17 @@
         </div>
       </div>
     </div>
-    
+
     <!-- Review Form Modal -->
-    <ReviewForm 
+    <ReviewForm
       v-if="selectedTourForReview"
       :tour-id="selectedTourForReview.id"
       modal-id="reviewFormModal"
       @review-submitted="onReviewSubmitted"
     />
-    
+
     <!-- Review List Modal -->
-    <ReviewList 
+    <ReviewList
       v-if="selectedTourForReviews"
       :tour-id="selectedTourForReviews.id"
       modal-id="reviewListModal"
@@ -370,30 +371,30 @@ export default {
     const selectedTourForReview = ref(null)
     const selectedTourForReviews = ref(null)
     const reviewListComponent = ref(null)
-    
+
     const filteredTours = computed(() => {
       let tours = tourStore.tours
-      
+
       if (searchQuery.value) {
         const query = searchQuery.value.toLowerCase()
-        tours = tours.filter(tour => 
+        tours = tours.filter(tour =>
           tour.name.toLowerCase().includes(query) ||
           tour.description.toLowerCase().includes(query) ||
           tour.tags.toLowerCase().includes(query)
         )
       }
-      
+
       if (difficultyFilter.value) {
         tours = tours.filter(tour => tour.difficulty === difficultyFilter.value)
       }
-      
+
       if (statusFilter.value) {
         tours = tours.filter(tour => tour.status === statusFilter.value)
       }
-      
+
       return tours
     })
-    
+
     onMounted(async () => {
       // Initialize Bootstrap modal
       if (viewModal.value) {
@@ -408,7 +409,7 @@ export default {
         await purchaseStore.fetchPurchasedTours()
       }
     })
-    
+
     const loadTours = async () => {
       loading.value = true
       try {
@@ -424,22 +425,10 @@ export default {
         loading.value = false
       }
     }
-    
+
     const viewTour = (tour) => {
       selectedTour.value = tour
       viewModalInstance.value?.show()
-    }
-    
-    const deleteTour = async (tour) => {
-      if (confirm(`Are you sure you want to delete "${tour.name}"?`)) {
-        try {
-          await tourStore.deleteTour(tour.id)
-          // Reload tours
-          await loadTours()
-        } catch (error) {
-          console.error('Failed to delete tour:', error)
-        }
-      }
     }
 
     const publishTour = async (tour) => {
@@ -455,21 +444,34 @@ export default {
       }
     }
 
-    const unpublishTour = async (tour) => {
-      if (confirm(`Are you sure you want to unpublish "${tour.name}"?`)) {
+    const archiveTour = async (tour) => {
+      if (confirm(`Are you sure you want to archive "${tour.name}"?`)) {
         try {
-          await tourStore.unpublishTour(tour.id)
+          await tourStore.archiveTour(tour.id)
           // Reload tours to reflect the status change
           await loadTours()
         } catch (error) {
-          console.error('Failed to unpublish tour:', error)
-          alert('Failed to unpublish tour. Please try again.')
+          console.error('Failed to archive tour:', error)
+          alert('Failed to archive tour. Please try again.')
         }
       }
     }
-    
+
+    const unarchiveTour = async (tour) => {
+      if (confirm(`Are you sure you want to unarchive "${tour.name}"?`)) {
+        try {
+          await tourStore.unarchiveTour(tour.id)
+          // Reload tours to reflect the status change
+          await loadTours()
+        } catch (error) {
+          console.error('Failed to unarchive tour:', error)
+          alert('Failed to unarchive tour. Please try again.')
+        }
+      }
+    }
+
     const canEdit = (tour) => {
-      return userStore.isAuthenticated && 
+      return userStore.isAuthenticated &&
              (userStore.username === tour.author_username || userStore.isAdmin)
     }
     
@@ -500,49 +502,51 @@ export default {
       difficultyFilter.value = ''
       statusFilter.value = ''
     }
-    
+
     const getStatusBadgeClass = (status) => {
       switch (status) {
         case 'published':
           return 'bg-success'
         case 'draft':
           return 'bg-secondary'
+        case 'archived':
+          return 'bg-info'
         default:
           return 'bg-secondary'
       }
     }
-    
+
     const truncateText = (text, maxLength) => {
       if (!text) return ''
       if (text.length <= maxLength) return text
       return text.substring(0, maxLength) + '...'
     }
-    
+
     const formatDate = (dateString) => {
       if (!dateString) return ''
       return new Date(dateString).toLocaleDateString()
     }
-    
+
     // Review methods
     const openReviewForm = (tour) => {
       selectedTourForReview.value = tour
       const modal = new Modal(document.getElementById('reviewFormModal'))
       modal.show()
     }
-    
+
     const openReviewList = (tour) => {
       selectedTourForReviews.value = tour
       const modal = new Modal(document.getElementById('reviewListModal'))
       modal.show()
     }
-    
+
     const onReviewSubmitted = () => {
       // Optionally refresh reviews if the review list is open
       if (reviewListComponent.value) {
         reviewListComponent.value.refresh()
       }
     }
-    
+
     return {
       loading,
       searchQuery,
@@ -559,9 +563,9 @@ export default {
       purchaseStore,
       addingToCart,
       viewTour,
-      deleteTour,
       publishTour,
-      unpublishTour,
+      archiveTour,
+      unarchiveTour,
       canEdit,
       canDelete,
       addToCart,

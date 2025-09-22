@@ -2,7 +2,6 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useUserStore } from '../stores/user'
 import Home from '../views/Home.vue'
 import Tours from '../views/Tours.vue'
-import CreateTour from '../views/CreateTour.vue'
 import TourEditor from '../views/TourEditor.vue'
 import Login from '../views/Login.vue'
 import Profile from '../views/Profile.vue'
@@ -12,6 +11,8 @@ import PurchasedTours from '../views/PurchasedTours.vue'
 import BlogList from '../views/BlogList.vue'
 import CreateBlog from '../views/CreateBlog.vue'
 import PositionSimulator from '../views/PositionSimulator.vue'
+import TourExecution from '../views/TourExecution.vue'
+import Recommendations from '../views/Recommendations.vue'
 
 const routes = [
   {
@@ -50,6 +51,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/recommendations',
+    name: 'Recommendations',
+    component: Recommendations,
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/users',
     name: 'Users',
     component: Users,
@@ -83,6 +90,12 @@ const routes = [
     path: '/position-simulator',
     name: 'PositionSimulator',
     component: PositionSimulator,
+    meta: { requiresAuth: true, requiresTourist: true }
+  },
+  {
+    path: '/tour-execution',
+    name: 'TourExecution',
+    component: TourExecution,
     meta: { requiresAuth: true, requiresTourist: true }
   }
 ]

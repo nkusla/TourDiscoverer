@@ -37,7 +37,7 @@ func (s *UserService) RegisterUser(req RegisterRequest) error {
 		return err
 	}
 
-	err = s.registerUserInFollowerService(user.Username)
+	err = s.registerUserInFollowerService(user.Username, user.Role)
 	if err != nil {
 		log.Fatalf("%v", err)
 	}
@@ -55,7 +55,7 @@ func (s *UserService) RegisterUser(req RegisterRequest) error {
 	return nil
 }
 
-func (s *UserService) registerUserInFollowerService(username string) error {
+func (s *UserService) registerUserInFollowerService(username string, role string) error {
 	followerServiceURL := os.Getenv("FOLLOWER_SERVICE_URL")
 	if followerServiceURL == "" {
 		return fmt.Errorf("follower service URL is not configured")
@@ -63,6 +63,7 @@ func (s *UserService) registerUserInFollowerService(username string) error {
 
 	payload := map[string]string{
 		"username": username,
+		"role":     role,
 	}
 
 	jsonData, err := json.Marshal(payload)

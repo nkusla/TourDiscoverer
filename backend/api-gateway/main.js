@@ -128,7 +128,6 @@ api.delete('/api/stakeholder/position', validateJWT, createProxyMiddleware({
   }
 }));
 
-// Public stakeholder routes (for creating profiles)
 api.use('/api/stakeholder', createProxyMiddleware({
   target: STAKEHOLDER_SERVICE_URL,
   changeOrigin: true,
@@ -145,87 +144,34 @@ api.use('/api/tours', validateJWT, createProxyMiddleware({
   },
 }));
 
-// RPC endpoint za kreiranje bloga
-api.post('/api/blogs', express.json(), validateJWT, async (req, res) => {
-  try {
-    const username = req.user.username; // iz JWT middleware
-    const blogData = {
-      title: req.body.title,
-      description: req.body.description,
-      images: req.body.images || [],
-      author: username
-    };
-    
-    const result = await blogRPCClient.createBlog(blogData);
-    res.status(201).json(result);
-  } catch (error) {
-    console.error('Blog creation error:', error);
-    res.status(500).json({ error: 'Failed to create blog' });
-  }
-});
+// TourExecution routes - protected for tourists
+api.use('/api/tour', validateJWT, createProxyMiddleware({
+  target: TOUR_SERVICE_URL,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api/tour': '',
+  },
+}));
 
-// RPC endpoint za dobavljanje personalizovanih blogova  
-api.get('/api/blogs/personalized', validateJWT, async (req, res) => {
-  try {
-    const username = req.user.username; // iz JWT middleware
-    const result = await blogRPCClient.getPersonalizedBlogs(username);
-    res.json(result.blogs || []);
-  } catch (error) {
-    console.error('Get personalized blogs error:', error);
-    res.status(500).json({ error: 'Failed to fetch personalized blogs' });
-  }
-});
+// Public blog routes (for reading blogs and comments)
+api.get('/api/blogs', createProxyMiddleware({
+  target: BLOG_SERVICE_URL,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api/blogs': '',
+  },
+}));
 
-// RPC endpoint za checkout
-api.post('/api/purchases/checkout-rpc', validateJWT, async (req, res) => {
-  try {
-    const username = req.user.username; // iz JWT middleware
-    const result = await purchaseRPCClient.checkout(username);
-    res.json(result);
-  } catch (error) {
-    console.error('Checkout RPC error:', error);
-    res.status(500).json({ error: 'Failed to checkout via RPC' });
-  }
-});
+// Protected blog routes for authenticated users to get personalized blogs
+api.get('/api/blogs/personalized', validateJWT, createProxyMiddleware({
+  target: BLOG_SERVICE_URL,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api/blogs/personalized': '',
+  },
+}));
 
-// RPC endpoint za dobavljanje kupljenih tura
-api.get('/api/purchases/tours-rpc', validateJWT, async (req, res) => {
-  try {
-    const username = req.user.username; // iz JWT middleware
-    const result = await purchaseRPCClient.getPurchasedTours(username);
-    res.json(result.tokens || []);
-  } catch (error) {
-    console.error('Get purchased tours RPC error:', error);
-    res.status(500).json({ error: 'Failed to fetch purchased tours via RPC' });
-  }
-});
-
-// RPC endpoint za stakeholder profil
-api.get('/api/stakeholder/profile-rpc', validateJWT, async (req, res) => {
-  try {
-    const username = req.user.username; // iz JWT middleware
-    const result = await stakeholderRPCClient.getProfile(username);
-    res.json(result);
-  } catch (error) {
-    console.error('Get stakeholder profile RPC error:', error);
-    res.status(500).json({ error: 'Failed to fetch profile via RPC' });
-  }
-});
-
-// RPC endpoint za stakeholder preporuke
-api.get('/api/stakeholder/recommendations', validateJWT, async (req, res) => {
-  try {
-    const username = req.user.username; // iz JWT middleware
-    const result = await stakeholderRPCClient.getRecommendations(username);
-    res.json(result.recommendations || []);
-  } catch (error) {
-    console.error('Get recommendations RPC error:', error);
-    res.status(500).json({ error: 'Failed to fetch recommendations via RPC' });
-  }
-});
-
-// Protected blog routes (for comments and likes) - ostaju HTTP proxy
-api.get('/api/blogs/comments', validateJWT, createProxyMiddleware({
+api.get('/api/blogs/comments', createProxyMiddleware({
   target: BLOG_SERVICE_URL,
   changeOrigin: true,
   pathRewrite: {
@@ -256,6 +202,14 @@ api.use('/api/purchases', validateJWT, createProxyMiddleware({
   changeOrigin: true,
   pathRewrite: {
     '^/api/purchases': '',
+  },
+}));
+
+api.use('/api/followers', validateJWT, createProxyMiddleware({
+  target: FOLLOWER_SERVICE_URL,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api/followers': '',
   },
 }));
 
