@@ -5,6 +5,7 @@ const { createProxyMiddleware } = require('http-proxy-middleware');
 const morgan = require('morgan');
 const { validateJWT, blockInternalRoutes, tracingMiddleware } = require('./middleware');
 const { AUTH_SERVICE_URL, STAKEHOLDER_SERVICE_URL, TOUR_SERVICE_URL, BLOG_SERVICE_URL, REVIEW_SERVICE_URL } = require('./constants');
+const BlogRPCClient = require('./blog_rpc_client');
 
 TracingManager.initTracer();
 
@@ -12,6 +13,9 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const api = express();
+
+// Kreiram Blog RPC klijent
+const blogRPCClient = new BlogRPCClient(process.env.BLOG_SERVICE_HOST || 'blog-service', 3012);
 
 // CORS configuration
 api.use(cors({
@@ -112,8 +116,39 @@ api.use('/api/tours', validateJWT, createProxyMiddleware({
   },
 }));
 
-// Public blog routes (for reading blogs and comments)
-api.get('/api/blogs', createProxyMiddleware({
+// RPC endpoint za kreiranje bloga
+api.post('/api/blogs', express.json(), validateJWT, async (req, res) => {
+  try {
+    const username = req.user.username; // iz JWT middleware
+    const blogData = {
+      title: req.body.title,
+      description: req.body.description,
+      images: req.body.images || [],
+      author: username
+    };
+    
+    const result = await blogRPCClient.createBlog(blogData);
+    res.status(201).json(result);
+  } catch (error) {
+    console.error('Blog creation error:', error);
+    res.status(500).json({ error: 'Failed to create blog' });
+  }
+});
+
+// RPC endpoint za dobavljanje personalizovanih blogova  
+api.get('/api/blogs/personalized', validateJWT, async (req, res) => {
+  try {
+    const username = req.user.username; // iz JWT middleware
+    const result = await blogRPCClient.getPersonalizedBlogs(username);
+    res.json(result.blogs || []);
+  } catch (error) {
+    console.error('Get personalized blogs error:', error);
+    res.status(500).json({ error: 'Failed to fetch personalized blogs' });
+  }
+});
+
+// Protected blog routes (for comments and likes) - ostaju HTTP proxy
+api.get('/api/blogs/comments', validateJWT, createProxyMiddleware({
   target: BLOG_SERVICE_URL,
   changeOrigin: true,
   pathRewrite: {
@@ -121,24 +156,7 @@ api.get('/api/blogs', createProxyMiddleware({
   },
 }));
 
-// Protected blog routes for authenticated users to get personalized blogs
-api.get('/api/blogs/personalized', validateJWT, createProxyMiddleware({
-  target: BLOG_SERVICE_URL,
-  changeOrigin: true,
-  pathRewrite: {
-    '^/api/blogs/personalized': '',
-  },
-}));
-
-api.get('/api/blogs/comments', createProxyMiddleware({
-  target: BLOG_SERVICE_URL,
-  changeOrigin: true,
-  pathRewrite: {
-    '^/api/blogs': '',
-  },
-}));
-
-// Protected blog routes (for creating, liking, commenting)
+// Protected blog routes (for liking, commenting) - ostaju HTTP proxy
 api.use('/api/blogs', validateJWT, createProxyMiddleware({
   target: BLOG_SERVICE_URL,
   changeOrigin: true,

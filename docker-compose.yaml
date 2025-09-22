@@ -383,6 +383,7 @@ services:
     hostname: ${BLOG_SERVICE_HOST}
     environment:
       - PORT=${BLOG_SERVICE_PORT}
+      - RPC_PORT=${RPC_PORT}
       - BLOG_DB_HOST=${BLOG_DB_HOST}
       - BLOG_DB_PORT=27017
       - BLOG_DB_NAME=${BLOG_DB_NAME}
