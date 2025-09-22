@@ -86,14 +86,17 @@ api.use('/api/auth', validateJWT, createProxyMiddleware({
   }
 }));
 
-// Protected stakeholder profile routes (must come first for specificity)
-api.get('/api/stakeholder/profile', validateJWT, createProxyMiddleware({
-  target: STAKEHOLDER_SERVICE_URL,
-  changeOrigin: true,
-  pathRewrite: {
-    '^/api/stakeholder/profile': '/profile',
+// Protected stakeholder profile route (use RPC)
+api.get('/api/stakeholder/profile', validateJWT, async (req, res) => {
+  try {
+    const username = req.user && req.user.username;
+    const profile = await stakeholderRPCClient.getProfile(username);
+    res.json(profile || {});
+  } catch (err) {
+    console.error('Stakeholder RPC getProfile error:', err);
+    res.status(500).json({ error: 'Failed to fetch profile via RPC' });
   }
-}));
+});
 
 api.put('/api/stakeholder/profile', validateJWT, createProxyMiddleware({
   target: STAKEHOLDER_SERVICE_URL,
@@ -204,6 +207,29 @@ api.use('/api/purchases', validateJWT, createProxyMiddleware({
     '^/api/purchases': '',
   },
 }));
+
+// RPC-backed purchase handlers for cart checkout and tokens (match frontend routes)
+api.post('/api/purchases/cart/checkout', validateJWT, express.json(), async (req, res) => {
+  try {
+    const username = req.user && req.user.username;
+    const result = await purchaseRPCClient.checkout(username);
+    res.json(result);
+  } catch (err) {
+    console.error('Purchase RPC checkout error:', err);
+    res.status(500).json({ error: 'Failed to checkout via RPC' });
+  }
+});
+
+api.get('/api/purchases/tokens', validateJWT, async (req, res) => {
+  try {
+    const username = req.user && req.user.username;
+    const result = await purchaseRPCClient.getPurchasedTours(username);
+    res.json(result.tokens || []);
+  } catch (err) {
+    console.error('Purchase RPC getPurchasedTours error:', err);
+    res.status(500).json({ error: 'Failed to fetch purchased tokens via RPC' });
+  }
+});
 
 api.use('/api/followers', validateJWT, createProxyMiddleware({
   target: FOLLOWER_SERVICE_URL,
