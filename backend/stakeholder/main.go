@@ -20,10 +20,15 @@ func main() {
 
 	// Public routes
 	r.HandleFunc("/", handler.CreateStakeholder).Methods(http.MethodPost)
-	
+
 	// Protected routes (require JWT validation from API gateway)
 	r.HandleFunc("/profile", handler.GetProfile).Methods(http.MethodGet)
 	r.HandleFunc("/profile", handler.UpdateProfile).Methods(http.MethodPut)
+
+	// Position simulator endpoints
+	r.HandleFunc("/position", handler.UpdatePosition).Methods(http.MethodPost)
+	r.HandleFunc("/position", handler.GetPosition).Methods(http.MethodGet)
+	r.HandleFunc("/position", handler.DeletePosition).Methods(http.MethodDelete)
 
 	// Internal routes
 	r.HandleFunc("/internal/ping", handler.Ping).Methods(http.MethodGet)

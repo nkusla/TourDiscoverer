@@ -36,6 +36,166 @@ services:
       timeout: 10s
       retries: 3
 
+  # ELK Stack za centralizovani logging
+  elasticsearch:
+    profiles: ["monitoring"]
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.8.0
+    container_name: td-elasticsearch
+    hostname: elasticsearch
+    environment:
+      - node.name=elasticsearch
+      - cluster.name=docker-cluster
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.security.enabled=false
+      - xpack.security.enrollment.enabled=false
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    ports:
+      - "${ELASTICSEARCH_PORT}:9200"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  logstash:
+    profiles: ["monitoring"]
+    image: docker.elastic.co/logstash/logstash:8.8.0
+    container_name: td-logstash
+    hostname: logstash
+    volumes:
+      - ./monitoring/logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
+      - ./monitoring/logstash/pipeline:/usr/share/logstash/pipeline:ro
+    ports:
+      - "5044:5044"
+      - "${LOGSTASH_PORT}:5000/tcp"
+      - "${LOGSTASH_PORT}:5000/udp"
+      - "9600:9600"
+    environment:
+      LS_JAVA_OPTS: "-Xmx256m -Xms256m"
+    depends_on:
+      - elasticsearch
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9600 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  kibana:
+    profiles: ["monitoring"]
+    image: docker.elastic.co/kibana/kibana:8.8.0
+    container_name: td-kibana
+    hostname: kibana
+    ports:
+      - "${KIBANA_PORT}:5601"
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5601/api/status || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Prometheus za metrike
+  prometheus:
+    profiles: ["monitoring"]
+    image: prom/prometheus:latest
+    container_name: td-prometheus
+    hostname: prometheus
+    ports:
+      - "${PROMETHEUS_PORT}:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:9090 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Grafana za vizualizaciju metrika
+  grafana:
+    profiles: ["monitoring"]
+    image: grafana/grafana:latest
+    container_name: td-grafana
+    hostname: grafana
+    ports:
+      - "${GRAFANA_PORT}:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:3000 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # cAdvisor za Docker kontejner metrike
+  cadvisor:
+    profiles: ["monitoring"]
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: td-cadvisor
+    hostname: cadvisor
+    ports:
+      - "${CADVISOR_PORT}:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    privileged: true
+    devices:
+      - /dev/kmsg
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:8080 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Node Exporter za host sistem metrike
+  node-exporter:
+    profiles: ["monitoring"]
+    image: prom/node-exporter:latest
+    container_name: td-node-exporter
+    hostname: node-exporter
+    ports:
+      - "${NODE_EXPORTER_PORT}:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:9100 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   auth-db:
     profiles: ["db"]
     image: postgres:16-alpine
@@ -172,6 +332,7 @@ services:
       - AUTH_DB_PASSWORD=${AUTH_DB_PASSWORD}
       - FOLLOWER_SERVICE_URL=http://${FOLLOWER_SERVICE_HOST}:${FOLLOWER_SERVICE_PORT}
       - STAKEHOLDER_SERVICE_URL=http://${STAKEHOLDER_SERVICE_HOST}:${STAKEHOLDER_SERVICE_PORT}
+      - LOGSTASH_PORT=${LOGSTASH_PORT}
     ports:
       - "${AUTH_SERVICE_PORT}:${AUTH_SERVICE_PORT}"
 
@@ -239,11 +400,13 @@ services:
     hostname: ${BLOG_SERVICE_HOST}
     environment:
       - PORT=${BLOG_SERVICE_PORT}
+      - RPC_PORT=${RPC_PORT}
       - BLOG_DB_HOST=${BLOG_DB_HOST}
       - BLOG_DB_PORT=27017
       - BLOG_DB_NAME=${BLOG_DB_NAME}
       - BLOG_DB_USER=${BLOG_DB_USER}
       - BLOG_DB_PASSWORD=${BLOG_DB_PASSWORD}
+      - FOLLOWER_SERVICE_URL=http://${FOLLOWER_SERVICE_HOST}:${FOLLOWER_SERVICE_PORT}
     ports:
       - "${BLOG_SERVICE_PORT}:${BLOG_SERVICE_PORT}"
 
@@ -313,3 +476,11 @@ services:
     depends_on:
       - auth-service
       - follower-service
+
+volumes:
+  elasticsearch-data:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local

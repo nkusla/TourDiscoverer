@@ -9,6 +9,9 @@ import Profile from '../views/Profile.vue'
 import Users from '../views/Users.vue'
 import ShoppingCart from '../views/ShoppingCart.vue'
 import PurchasedTours from '../views/PurchasedTours.vue'
+import BlogList from '../views/BlogList.vue'
+import CreateBlog from '../views/CreateBlog.vue'
+import PositionSimulator from '../views/PositionSimulator.vue'
 
 const routes = [
   {
@@ -63,6 +66,24 @@ const routes = [
     name: 'PurchasedTours',
     component: PurchasedTours,
     meta: { requiresAuth: true, requiresTourist: true }
+  },
+  {
+    path: '/blogs',
+    name: 'BlogList',
+    component: BlogList,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/blog/create',
+    name: 'CreateBlog',
+    component: CreateBlog,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/position-simulator',
+    name: 'PositionSimulator',
+    component: PositionSimulator,
+    meta: { requiresAuth: true, requiresTourist: true }
   }
 ]
 
@@ -101,6 +122,12 @@ router.beforeEach((to, from, next) => {
 
   // Check if route requires guest (like login page)
   if (to.meta.requiresGuest && userStore.isAuthenticated) {
+    next('/')
+    return
+  }
+
+  // Check if route requires tourist privileges
+  if (to.meta.requiresTourist && userStore.user?.role !== 'tourist') {
     next('/')
     return
   }

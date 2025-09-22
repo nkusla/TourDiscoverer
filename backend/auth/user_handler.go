@@ -15,14 +15,18 @@ type UserHandler struct {
 var validate = validator.New()
 
 func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
+	authLogger.Info("User registration attempt")
+
 	var registerReq RegisterRequest
 	err := json.NewDecoder(r.Body).Decode(&registerReq)
 	if err != nil {
+		authLogger.Error("Failed to decode registration request", err)
 		http.Error(w, "invalid JSON", http.StatusBadRequest)
 		return
 	}
 
 	if err := validate.Struct(registerReq); err != nil {
+		authLogger.Warn("Registration validation failed: " + err.Error())
 		http.Error(w, "validation error: "+err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -30,27 +34,41 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 	err = h.service.RegisterUser(registerReq)
 	if err != nil {
 		if errors.Is(err, ErrUsernameAlreadyExists) || errors.Is(err, ErrEmailAlreadyExists) {
+			authLogger.Warn("Registration failed: " + err.Error())
 			http.Error(w, err.Error(), http.StatusConflict)
 		} else if errors.Is(err, ErrInvalidRole) {
+			authLogger.Warn("Registration failed: " + err.Error())
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		} else {
+			authLogger.Error("Registration failed", err)
 			http.Error(w, "error registering user: "+err.Error(), http.StatusInternalServerError)
 		}
 		return
 	}
 
+	// Record successful registration
+	// recordRegistration() // UKLONJENO - nema metrics
+	authLogger.InfoWithFields("User registered successfully", map[string]interface{}{
+		"username": registerReq.Username,
+		"role":     registerReq.Role,
+	})
+
 	w.WriteHeader(http.StatusCreated)
 }
 
 func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
+	authLogger.Info("User login attempt")
+
 	var loginReq LoginRequest
 	err := json.NewDecoder(r.Body).Decode(&loginReq)
 	if err != nil {
+		authLogger.Error("Failed to decode login request", err)
 		http.Error(w, "invalid JSON", http.StatusBadRequest)
 		return
 	}
 
 	if err := validate.Struct(loginReq); err != nil {
+		authLogger.Warn("Login validation failed: " + err.Error())
 		http.Error(w, "validation error: "+err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -58,14 +76,26 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 	tokenString, err := h.service.AuthenticateUser(loginReq.Username, loginReq.Password)
 	if err != nil {
 		if errors.Is(err, ErrInvalidCredentials) {
+			// recordLoginFailure() // UKLONJENO - nema metrics
+			authLogger.Warn("Login failed: invalid credentials for user " + loginReq.Username)
 			http.Error(w, err.Error(), http.StatusUnauthorized)
 		} else if errors.Is(err, ErrUserBanned) {
+			// recordLoginFailure() // UKLONJENO - nema metrics
+			authLogger.Warn("Login failed: user is banned " + loginReq.Username)
 			http.Error(w, err.Error(), http.StatusForbidden)
 		} else {
+			// recordLoginFailure() // UKLONJENO - nema metrics
+			authLogger.Error("Login failed", err)
 			http.Error(w, "error authenticating user: "+err.Error(), http.StatusInternalServerError)
 		}
 		return
 	}
+
+	// Record successful login
+	// recordLoginSuccess() // UKLONJENO - nema metrics
+	authLogger.InfoWithFields("User logged in successfully", map[string]interface{}{
+		"username": loginReq.Username,
+	})
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)

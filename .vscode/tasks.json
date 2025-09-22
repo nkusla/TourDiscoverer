@@ -52,6 +52,32 @@
 				"down"
 			],
 			"problemMatcher": []
+		},
+		{
+			"label": "Docker: Build and Run Monitoring",
+			"type": "shell",
+			"command": "docker",
+			"args": [
+				"compose",
+				"--profile",
+				"monitoring",
+				"up",
+				"--build",
+				"-d"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Docker: Stop Monitoring",
+			"type": "shell",
+			"command": "docker",
+			"args": [
+				"compose",
+				"--profile",
+				"monitoring",
+				"down"
+			],
+			"problemMatcher": []
 		}
 	]
 }

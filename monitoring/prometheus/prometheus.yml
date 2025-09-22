@@ -1,0 +1,35 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+scrape_configs:
+  # Prometheus se sam monitoriše
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Node Exporter za host sistem metrike
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    scrape_interval: 5s
+    metrics_path: '/metrics'
+
+  # cAdvisor za Docker kontejner metrike
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['host.docker.internal:8090']
+    scrape_interval: 5s
+    metrics_path: '/metrics'
+
+  # zakomentarisano - odkomentarisati kad kupim pc za 1000000 evra ili nesto 
+  # Auth service (ima implementiran metrics endpoint)
+  #- job_name: 'auth-service'
+  #  static_configs:
+  #    - targets: ['auth-service:3001']
+  #  metrics_path: '/metrics'
+  #  scrape_interval: 10s
