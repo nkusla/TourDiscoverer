@@ -34,6 +34,17 @@ func main() {
 	r.HandleFunc("/internal/ping", handler.Ping).Methods(http.MethodGet)
 	r.HandleFunc("/internal/user", handler.CreateStakeholderFromAuth).Methods(http.MethodPost)
 
+	// Pokretanje RPC servera u goroutine
+	rpcServer := NewStakeholderRPCServer(service)
+	rpcPort := os.Getenv("RPC_PORT")
+	if rpcPort == "" {
+		rpcPort = "3014"
+	}
+	go func() {
+		log.Printf("Starting Stakeholder RPC server on port %s", rpcPort)
+		rpcServer.StartRPCServer(rpcPort)
+	}()
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8081"

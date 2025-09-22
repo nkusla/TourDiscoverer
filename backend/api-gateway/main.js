@@ -4,8 +4,9 @@ const cors = require('cors');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const morgan = require('morgan');
 const { validateJWT, blockInternalRoutes, tracingMiddleware } = require('./middleware');
-const { AUTH_SERVICE_URL, STAKEHOLDER_SERVICE_URL, TOUR_SERVICE_URL, BLOG_SERVICE_URL, REVIEW_SERVICE_URL } = require('./constants');
 const BlogRPCClient = require('./blog_rpc_client');
+const PurchaseRPCClient = require('./purchase_rpc_client');
+const StakeholderRPCClient = require('./stakeholder_rpc_client');
 
 // Load environment variables before requiring constants so they use .env values
 const dotenv = require('dotenv');
@@ -35,8 +36,10 @@ console.log('PURCHASE_SERVICE_URL:', PURCHASE_SERVICE_URL);
 
 const api = express();
 
-// Kreiram Blog RPC klijent
+// Kreiram RPC klijente
 const blogRPCClient = new BlogRPCClient(process.env.BLOG_SERVICE_HOST || 'blog-service', 3012);
+const purchaseRPCClient = new PurchaseRPCClient(process.env.PURCHASE_SERVICE_HOST || 'purchase-service', 3013);
+const stakeholderRPCClient = new StakeholderRPCClient(process.env.STAKEHOLDER_SERVICE_HOST || 'stakeholder-service', 3014);
 
 // CORS configuration
 api.use(cors({
@@ -170,6 +173,54 @@ api.get('/api/blogs/personalized', validateJWT, async (req, res) => {
   } catch (error) {
     console.error('Get personalized blogs error:', error);
     res.status(500).json({ error: 'Failed to fetch personalized blogs' });
+  }
+});
+
+// RPC endpoint za checkout
+api.post('/api/purchases/checkout-rpc', validateJWT, async (req, res) => {
+  try {
+    const username = req.user.username; // iz JWT middleware
+    const result = await purchaseRPCClient.checkout(username);
+    res.json(result);
+  } catch (error) {
+    console.error('Checkout RPC error:', error);
+    res.status(500).json({ error: 'Failed to checkout via RPC' });
+  }
+});
+
+// RPC endpoint za dobavljanje kupljenih tura
+api.get('/api/purchases/tours-rpc', validateJWT, async (req, res) => {
+  try {
+    const username = req.user.username; // iz JWT middleware
+    const result = await purchaseRPCClient.getPurchasedTours(username);
+    res.json(result.tokens || []);
+  } catch (error) {
+    console.error('Get purchased tours RPC error:', error);
+    res.status(500).json({ error: 'Failed to fetch purchased tours via RPC' });
+  }
+});
+
+// RPC endpoint za stakeholder profil
+api.get('/api/stakeholder/profile-rpc', validateJWT, async (req, res) => {
+  try {
+    const username = req.user.username; // iz JWT middleware
+    const result = await stakeholderRPCClient.getProfile(username);
+    res.json(result);
+  } catch (error) {
+    console.error('Get stakeholder profile RPC error:', error);
+    res.status(500).json({ error: 'Failed to fetch profile via RPC' });
+  }
+});
+
+// RPC endpoint za stakeholder preporuke
+api.get('/api/stakeholder/recommendations', validateJWT, async (req, res) => {
+  try {
+    const username = req.user.username; // iz JWT middleware
+    const result = await stakeholderRPCClient.getRecommendations(username);
+    res.json(result.recommendations || []);
+  } catch (error) {
+    console.error('Get recommendations RPC error:', error);
+    res.status(500).json({ error: 'Failed to fetch recommendations via RPC' });
   }
 });
 

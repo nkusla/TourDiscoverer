@@ -27,8 +27,9 @@ WORKDIR /root/
 # Copy the binary from builder stage
 COPY --from=builder /app/main .
 
-# Expose port
+# Expose ports
 EXPOSE 8084
+EXPOSE 3013
 
 # Run the application
 CMD ["./main"]

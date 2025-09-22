@@ -57,6 +57,14 @@ func main() {
     // Apply CORS middleware
     handler := c.Handler(router)
     
+    // Pokretanje RPC servera u goroutine
+    rpcServer := NewPurchaseRPCServer(purchaseService)
+    rpcPort := GetEnv("RPC_PORT", "3013")
+    go func() {
+        log.Printf("Starting Purchase RPC server on port %s", rpcPort)
+        rpcServer.StartRPCServer(rpcPort)
+    }()
+    
     // Get port from environment or default
     port := GetEnv("PORT", "8084")
     log.Printf("🚀 Purchase service starting on port %s", port)
