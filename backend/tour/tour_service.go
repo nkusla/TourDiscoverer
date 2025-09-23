@@ -369,16 +369,11 @@ func (service *TourService) StartTourExecution(request *StartTourExecutionReques
 		return nil, errors.New("tour is not available for execution")
 	}
 
-	// Check if the tourist has purchased this tour
 	err = service.checkTourPurchase(touristUsername, request.TourID)
 	if err != nil {
 		if err == ErrTourNotPurchased {
 			return nil, errors.New("tour must be purchased before execution")
 		}
-		// Log the error but continue for now (in case purchase service is down)
-		fmt.Printf("Warning: Could not validate tour purchase: %v\n", err)
-		// For production, you might want to return an error here instead
-		// return nil, errors.New("failed to validate tour purchase")
 	}
 
 	// Create new tour execution
@@ -525,9 +520,8 @@ func (service *TourService) GetPurchasedToursForTourist(userID string) ([]Tour, 
 	return service.repository.GetPurchasedToursForTourist(purchasedTourIds)
 }
 
-// getPurchasedTourIds returns list of tour IDs that the user has purchased
 func (service *TourService) getPurchasedTourIds(userID string) ([]uint, error) {
-	// Get purchase service host and port from environment
+
 	purchaseHost := os.Getenv("PURCHASE_SERVICE_HOST")
 	purchasePort := os.Getenv("PURCHASE_SERVICE_PORT")
 	if purchaseHost == "" {
@@ -537,21 +531,17 @@ func (service *TourService) getPurchasedTourIds(userID string) ([]uint, error) {
 		purchasePort = "8084"
 	}
 
-	// Build the URL for getting user tokens
 	purchaseURL := fmt.Sprintf("http://%s:%s/tokens", purchaseHost, purchasePort)
 
-	// Create HTTP request
 	req, err := http.NewRequest(http.MethodGet, purchaseURL, nil)
 	if err != nil {
 		fmt.Printf("Failed to create purchase tokens request: %v\n", err)
 		return nil, fmt.Errorf("failed to get purchased tours: %w", err)
 	}
 
-	// Set required headers
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("x-username", userID)
 
-	// Make HTTP request
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -560,7 +550,6 @@ func (service *TourService) getPurchasedTourIds(userID string) ([]uint, error) {
 	}
 	defer resp.Body.Close()
 
-	// Check response status
 	if resp.StatusCode == http.StatusNotFound {
 		// User has no purchases
 		return []uint{}, nil
@@ -598,9 +587,7 @@ func (service *TourService) getPurchasedTourIds(userID string) ([]uint, error) {
 	return tourIds, nil
 }
 
-// checkTourPurchase checks if the user has purchased the tour by calling the purchase service
 func (service *TourService) checkTourPurchase(userID string, tourID uint) error {
-	// Get purchase service host and port from environment
 	purchaseHost := os.Getenv("PURCHASE_SERVICE_HOST")
 	purchasePort := os.Getenv("PURCHASE_SERVICE_PORT")
 	if purchaseHost == "" {
@@ -610,21 +597,17 @@ func (service *TourService) checkTourPurchase(userID string, tourID uint) error 
 		purchasePort = "8084"
 	}
 
-	// Build the URL for the purchase validation endpoint
 	purchaseURL := fmt.Sprintf("http://%s:%s/validate/%d", purchaseHost, purchasePort, tourID)
 
-	// Create HTTP request
 	req, err := http.NewRequest(http.MethodGet, purchaseURL, nil)
 	if err != nil {
 		fmt.Printf("Failed to create purchase validation request: %v\n", err)
 		return fmt.Errorf("failed to validate purchase: %w", err)
 	}
 
-	// Set required headers (purchase service expects x-username header)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("x-username", userID)
 
-	// Make HTTP request
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -633,17 +616,15 @@ func (service *TourService) checkTourPurchase(userID string, tourID uint) error 
 	}
 	defer resp.Body.Close()
 
-	// Check response status
 	if resp.StatusCode == http.StatusNotFound {
-		// User hasn't purchased this tour
+
 		return ErrTourNotPurchased
 	} else if resp.StatusCode >= 300 {
-		// Some other error occurred
+
 		fmt.Printf("Purchase service returned error status: %d\n", resp.StatusCode)
 		return fmt.Errorf("purchase validation failed with status: %d", resp.StatusCode)
 	}
 
-	// Status 200 means tour is purchased and valid
 	fmt.Printf("Tour purchase validated successfully for user %s and tour %d\n", userID, tourID)
 	return nil
 }
