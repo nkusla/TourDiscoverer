@@ -9,4 +9,5 @@ var (
 	ErrTourNotArchivable   = errors.New("tour cannot be archived")
 	ErrTourNotUnarchivable = errors.New("tour cannot be unarchived")
 	ErrTourNotEditable     = errors.New("tour cannot be edited")
+	ErrTourNotPurchased    = errors.New("tour not purchased")
 )

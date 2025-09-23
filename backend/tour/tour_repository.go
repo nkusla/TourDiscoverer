@@ -133,3 +133,15 @@ func (repo *TourRepository) GetExecutableToursForTourist() ([]Tour, error) {
 		Find(&tours)
 	return tours, result.Error
 }
+
+func (repo *TourRepository) GetPurchasedToursForTourist(tourIds []uint) ([]Tour, error) {
+	if len(tourIds) == 0 {
+		return []Tour{}, nil
+	}
+
+	var tours []Tour
+	result := repo.database.Preload("KeyPoints").
+		Where("id IN (?) AND status IN (?)", tourIds, []string{TourStatusPublished, TourStatusArchived}).
+		Find(&tours)
+	return tours, result.Error
+}
