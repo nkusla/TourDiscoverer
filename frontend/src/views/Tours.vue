@@ -148,7 +148,35 @@
                     Unarchive
                   </button>
                 </div>
-
+                
+                <!-- Purchase Actions (for tourists) -->
+                <div class="btn-group" role="group" v-if="userStore.isTourist && tour.status === 'published'">
+                  <button 
+                    v-if="!cartStore.isInCart(tour.id) && !purchaseStore.hasPurchased(tour.id)"
+                    class="btn btn-success btn-sm"
+                    @click="addToCart(tour)"
+                    :disabled="addingToCart === tour.id"
+                  >
+                    <span v-if="addingToCart === tour.id" class="spinner-border spinner-border-sm me-1"></span>
+                    <i v-else class="fas fa-shopping-cart me-1"></i>
+                    Add to Cart
+                  </button>
+                  <button 
+                    v-else-if="cartStore.isInCart(tour.id)"
+                    class="btn btn-outline-success btn-sm"
+                    disabled
+                  >
+                    <i class="fas fa-check me-1"></i>In Cart
+                  </button>
+                  <button 
+                    v-else-if="purchaseStore.hasPurchased(tour.id)"
+                    class="btn btn-outline-primary btn-sm"
+                    disabled
+                  >
+                    <i class="fas fa-ticket-alt me-1"></i>Purchased
+                  </button>
+                </div>
+                
                 <!-- Review Actions -->
                 <div class="btn-group" role="group">
                   <button
@@ -213,11 +241,21 @@
                 <p><strong>Price:</strong> ${{ selectedTour.price }}</p>
                 <p><strong>Tags:</strong> {{ selectedTour.tags }}</p>
                 <p><strong>Status:</strong> {{ selectedTour.status }}</p>
-
+                
+                <!-- Limited View for Non-Purchased Tours -->
+                <div v-if="!isPurchased(selectedTour.id)" class="alert alert-info">
+                  <h6 class="alert-heading">
+                    <i class="fas fa-lock me-2"></i>Limited Preview
+                  </h6>
+                  <p class="mb-0">
+                    Purchase this tour to view all key points and unlock the complete route!
+                  </p>
+                </div>
+                
                 <h6 class="mt-4">Key Points</h6>
-                <div class="list-group">
-                  <div
-                    v-for="(point, index) in selectedTour.key_points"
+                <div v-if="isPurchased(selectedTour.id)" class="list-group">
+                  <div 
+                    v-for="(point, index) in selectedTour.key_points" 
                     :key="point.id"
                     class="list-group-item"
                   >
@@ -226,15 +264,38 @@
                     <small>{{ point.latitude.toFixed(4) }}, {{ point.longitude.toFixed(4) }}</small>
                   </div>
                 </div>
+                <div v-else class="alert alert-warning">
+                  <i class="fas fa-eye-slash me-2"></i>
+                  Key points are hidden. Purchase this tour to view the complete route.
+                </div>
               </div>
 
               <div class="col-md-6">
                 <h6>Tour Route</h6>
-                <LeafletMap
-                  :key-points="selectedTour.key_points || []"
-                  :editable="false"
-                  map-height="400px"
-                />
+                <div v-if="isPurchased(selectedTour.id)">
+                  <LeafletMap
+                    :key-points="selectedTour.key_points || []"
+                    :editable="false"
+                    map-height="400px"
+                  />
+                </div>
+                <div v-else class="d-flex align-items-center justify-content-center bg-light rounded" style="height: 400px;">
+                  <div class="text-center">
+                    <i class="fas fa-map fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">Route Preview Locked</h5>
+                    <p class="text-muted">Purchase this tour to view the interactive map</p>
+                    <button 
+                      v-if="userStore.isTourist && !cartStore.isInCart(selectedTour.id)"
+                      class="btn btn-success"
+                      @click="addToCart(selectedTour)"
+                      :disabled="addingToCart === selectedTour.id"
+                    >
+                      <span v-if="addingToCart === selectedTour.id" class="spinner-border spinner-border-sm me-1"></span>
+                      <i v-else class="fas fa-shopping-cart me-1"></i>
+                      Add to Cart
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -277,6 +338,8 @@
 import { ref, computed, onMounted } from 'vue'
 import { useTourStore } from '../stores/tour'
 import { useUserStore } from '../stores/user'
+import { useCartStore } from '../stores/cart'
+import { usePurchaseStore } from '../stores/purchase'
 import LeafletMap from '../components/Map/LeafletMap.vue'
 import ReviewForm from '../components/Review/ReviewForm.vue'
 import ReviewList from '../components/Review/ReviewList.vue'
@@ -292,7 +355,9 @@ export default {
   setup() {
     const tourStore = useTourStore()
     const userStore = useUserStore()
-
+    const cartStore = useCartStore()
+    const purchaseStore = usePurchaseStore()
+    
     const loading = ref(false)
     const searchQuery = ref('')
     const difficultyFilter = ref('')
@@ -300,7 +365,8 @@ export default {
     const selectedTour = ref(null)
     const viewModal = ref(null)
     const viewModalInstance = ref(null)
-
+    const addingToCart = ref(null)
+    
     // Review-related refs
     const selectedTourForReview = ref(null)
     const selectedTourForReviews = ref(null)
@@ -334,9 +400,14 @@ export default {
       if (viewModal.value) {
         viewModalInstance.value = new Modal(viewModal.value)
       }
-
-      // Load tours
+      
+      // Load tours, cart, and purchased tours
       await loadTours()
+      
+      if (userStore.isAuthenticated) {
+        await cartStore.fetchCart()
+        await purchaseStore.fetchPurchasedTours()
+      }
     })
 
     const loadTours = async () => {
@@ -403,7 +474,29 @@ export default {
       return userStore.isAuthenticated &&
              (userStore.username === tour.author_username || userStore.isAdmin)
     }
-
+    
+    const canDelete = (tour) => {
+      return canEdit(tour)
+    }
+    
+    const addToCart = async (tour) => {
+      addingToCart.value = tour.id
+      try {
+        await cartStore.addToCart(tour.id)
+        // Show success message or notification
+        alert(`"${tour.name}" added to cart successfully!`)
+      } catch (error) {
+        console.error('Failed to add to cart:', error)
+        alert(error.message || 'Failed to add tour to cart')
+      } finally {
+        addingToCart.value = null
+      }
+    }
+    
+    const isPurchased = (tourId) => {
+      return userStore.isAuthenticated && purchaseStore.hasPurchased(tourId)
+    }
+    
     const clearFilters = () => {
       searchQuery.value = ''
       difficultyFilter.value = ''
@@ -466,11 +559,17 @@ export default {
       selectedTourForReviews,
       reviewListComponent,
       userStore,
+      cartStore,
+      purchaseStore,
+      addingToCart,
       viewTour,
       publishTour,
       archiveTour,
       unarchiveTour,
       canEdit,
+      canDelete,
+      addToCart,
+      isPurchased,
       clearFilters,
       getStatusBadgeClass,
       truncateText,

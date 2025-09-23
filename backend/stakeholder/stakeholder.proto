@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package stakeholder;
+
+option go_package = "./;stakeholder";
+
+// Stakeholder servis definicija
+service StakeholderService {
+  rpc GetProfile(GetProfileRequest) returns (GetProfileResponse);
+  rpc GetRecommendations(GetRecommendationsRequest) returns (GetRecommendationsResponse);
+}
+
+// Request za dobavljanje profila
+message GetProfileRequest {
+  string username = 1;
+}
+
+// Response za dobavljanje profila
+message GetProfileResponse {
+  string username = 1;
+  string name = 2;
+  string surname = 3;
+  string email = 4;
+  string user_role = 5;
+}
+
+// Request za preporuke
+message GetRecommendationsRequest {
+  string username = 1;
+}
+
+// Preporuka struktura
+message RecommendationMessage {
+  string type = 1;
+  string title = 2;
+  string description = 3;
+  uint64 entity_id = 4;
+}
+
+// Response za preporuke
+message GetRecommendationsResponse {
+  repeated RecommendationMessage recommendations = 1;
+}

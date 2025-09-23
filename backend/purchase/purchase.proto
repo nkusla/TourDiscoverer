@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package purchase;
+
+option go_package = "./;purchase";
+
+// Purchase servis definicija
+service PurchaseService {
+  rpc Checkout(CheckoutRequest) returns (CheckoutResponse);
+  rpc GetPurchasedTours(GetPurchasedToursRequest) returns (GetPurchasedToursResponse);
+}
+
+// Request za checkout
+message CheckoutRequest {
+  string username = 1;
+}
+
+// Response za checkout
+message CheckoutResponse {
+  bool success = 1;
+  string message = 2;
+  repeated string tokens = 3;
+}
+
+// Request za dobavljanje kupljenih tura
+message GetPurchasedToursRequest {
+  string username = 1;
+}
+
+// Token struktura
+message TokenMessage {
+  string token = 1;
+  uint64 tour_id = 2;
+  string tour_name = 3;
+  string purchased_at = 4;
+}
+
+// Response za dobavljanje kupljenih tura
+message GetPurchasedToursResponse {
+  repeated TokenMessage tokens = 1;
+}

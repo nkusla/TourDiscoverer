@@ -40,6 +40,20 @@
           <li class="nav-item" v-if="isAdmin">
             <router-link class="nav-link" to="/users">Users</router-link>
           </li>
+          <li class="nav-item" v-if="isTourist">
+            <router-link class="nav-link" to="/cart">
+              <i class="fas fa-shopping-cart me-1"></i>
+              Cart
+              <span v-if="cartItemCount > 0" class="badge bg-warning text-dark ms-1">
+                {{ cartItemCount }}
+              </span>
+            </router-link>
+          </li>
+          <li class="nav-item" v-if="isTourist">
+            <router-link class="nav-link" to="/purchases">
+              <i class="fas fa-ticket-alt me-1"></i>My Tours
+            </router-link>
+          </li>
         </ul>
 
         <ul class="navbar-nav">
@@ -64,15 +78,17 @@
 </template>
 
 <script>
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
+import { useCartStore } from '../stores/cart'
 
 export default {
   name: 'Navbar',
   setup() {
     const router = useRouter()
     const userStore = useUserStore()
+    const cartStore = useCartStore()
     const showDropdown = ref(false)
 
     const isAuthenticated = computed(() => {
@@ -82,9 +98,19 @@ export default {
     const isAdmin = computed(() => {
       return userStore.isAdmin
     })
-
+    
     const isTourist = computed(() => {
-      return userStore.user?.role === 'tourist'
+      return userStore.isTourist
+    })
+    
+    const cartItemCount = computed(() => {
+      return cartStore.itemCount
+    })
+    
+    onMounted(async () => {
+      if (userStore.isAuthenticated && userStore.isTourist) {
+        await cartStore.fetchCart()
+      }
     })
 
     const toggleDropdown = () => {
@@ -104,6 +130,7 @@ export default {
       isAuthenticated,
       isAdmin,
       isTourist,
+      cartItemCount,
       showDropdown,
       toggleDropdown,
       logout

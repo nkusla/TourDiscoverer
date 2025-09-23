@@ -1,13 +1,18 @@
-FROM golang:1.23.4-alpine AS builder
+FROM golang:1.21-alpine AS builder
 
 WORKDIR /app
+
+# Copy go mod file
+COPY go.mod ./
+
+# Download dependencies (this will create go.sum)
+RUN go mod download
 
 # Copy source code
 COPY . .
 
-# Download dependencies and generate go.sum
+# Tidy up dependencies and generate go.sum
 RUN go mod tidy
-RUN go mod download
 
 # Build the application
 RUN go build -o main .
@@ -23,8 +28,8 @@ WORKDIR /root/
 COPY --from=builder /app/main .
 
 # Expose ports
-EXPOSE 8081
-EXPOSE 3014
+EXPOSE 8084
+EXPOSE 3013
 
-# Run the binary
+# Run the application
 CMD ["./main"]

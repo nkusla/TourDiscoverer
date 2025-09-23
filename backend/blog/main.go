@@ -47,6 +47,17 @@ func main() {
 	r.HandleFunc("/comment", commentHandler.CreateComment).Methods(http.MethodPost)
 	r.HandleFunc("/comments", commentHandler.GetComments).Methods(http.MethodGet)
 
+	// Pokretanje RPC servera u goroutine
+	rpcServer := NewBlogRPCServer(service)
+	rpcPort := os.Getenv("RPC_PORT")
+	if rpcPort == "" {
+		rpcPort = "3012"
+	}
+	go func() {
+		log.Printf("Starting Blog RPC server on port %s", rpcPort)
+		rpcServer.StartRPCServer(rpcPort)
+	}()
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "3002"

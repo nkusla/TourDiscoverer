@@ -1,0 +1,122 @@
+//go:build ignore
+// +build ignore
+
+package main //nuke sam ovaj file jer je on meni nuke kompjuter
+
+import (
+	"net/http"
+	"strconv"
+	"time"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	//"github.com/prometheus/client_golang/prometheus"
+	//"github.com/prometheus/client_golang/prometheus/promauto"
+	//"github.com/prometheus/client_golang/prometheus/promhttp"
+)
+
+var (
+/*
+// HTTP request metrike
+httpRequestsTotal = promauto.NewCounterVec(
+
+	prometheus.CounterOpts{
+		Name: "http_requests_total",
+		Help: "Total number of HTTP requests",
+	},
+	[]string{"method", "endpoint", "status_code"},
+
+)
+
+httpRequestDuration = promauto.NewHistogramVec(
+
+	prometheus.HistogramOpts{
+		Name: "http_request_duration_seconds",
+		Help: "Duration of HTTP requests",
+	},
+	[]string{"method", "endpoint"},
+
+)
+
+// Auth service specifične metrike
+authSuccessTotal = promauto.NewCounter(
+
+	prometheus.CounterOpts{
+		Name: "auth_login_success_total",
+		Help: "Total number of successful logins",
+	},
+
+)
+
+authFailureTotal = promauto.NewCounter(
+
+	prometheus.CounterOpts{
+		Name: "auth_login_failure_total",
+		Help: "Total number of failed logins",
+	},
+
+)
+
+registerTotal = promauto.NewCounter(
+
+	prometheus.CounterOpts{
+		Name: "auth_register_total",
+		Help: "Total number of user registrations",
+	},
+
+)
+*/
+)
+
+// Prometheus middleware za HTTP metrike
+func prometheusMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+
+		// Wrapper za ResponseWriter
+		rw := &metricResponseWriter{ResponseWriter: w, statusCode: 200}
+
+		next.ServeHTTP(rw, r)
+
+		duration := time.Since(start).Seconds()
+
+		// Record metrike
+		httpRequestsTotal.WithLabelValues(
+			r.Method,
+			r.URL.Path,
+			strconv.Itoa(rw.statusCode),
+		).Inc()
+
+		httpRequestDuration.WithLabelValues(
+			r.Method,
+			r.URL.Path,
+		).Observe(duration)
+	})
+}
+
+type metricResponseWriter struct {
+	http.ResponseWriter
+	statusCode int
+}
+
+func (rw *metricResponseWriter) WriteHeader(code int) {
+	rw.statusCode = code
+	rw.ResponseWriter.WriteHeader(code)
+}
+
+// Helper funkcije za specifične metrike
+func recordLoginSuccess() {
+	authSuccessTotal.Inc()
+}
+
+func recordLoginFailure() {
+	authFailureTotal.Inc()
+}
+
+func recordRegistration() {
+	registerTotal.Inc()
+}
+
+// Handler za /metrics endpoint
+func metricsHandler() http.Handler {
+	return promhttp.Handler()
+}

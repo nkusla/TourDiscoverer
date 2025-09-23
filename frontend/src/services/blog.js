@@ -2,15 +2,17 @@ import api from './api'
 
 // Blog service for API calls
 const blogService = {
-  // Get all blogs
+  // Get all blogs (requires authentication)
   async getBlogs() {
     try {
-      // Proverava da li je korisnik ulogovan
+      // Proverava da li je korisnik ulogovan - blogovi se mogu videti samo ako si ulogovan
       const token = localStorage.getItem('token'); 
-      const endpoint = token ? '/api/blogs/personalized' : '/api/blogs';
+      if (!token) {
+        throw new Error('Authentication required to view blogs');
+      }
       
+      const endpoint = '/api/blogs/personalized';
       console.log('Using endpoint:', endpoint);
-      console.log('Token exists:', !!token);
       
       const response = await api.get(endpoint)
       console.log('Blog response from backend:', response.data)

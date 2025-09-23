@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package blog;
+
+option go_package = "./;blog";
+
+// Blog servis definicija
+service BlogService {
+  rpc CreateBlog(CreateBlogRequest) returns (CreateBlogResponse);
+  rpc GetPersonalizedBlogs(GetPersonalizedBlogsRequest) returns (GetPersonalizedBlogsResponse);
+}
+
+// Request za kreiranje bloga
+message CreateBlogRequest {
+  string title = 1;
+  string description = 2;
+  string image_url = 3;
+  string author = 4;
+}
+
+// Response za kreiranje bloga
+message CreateBlogResponse {
+  bool success = 1;
+  string message = 2;
+  string blog_id = 3;
+}
+
+// Request za dobavljanje personalizovanih blogova
+message GetPersonalizedBlogsRequest {
+  string username = 1;
+}
+
+// Blog struktura
+message BlogMessage {
+  string id = 1;
+  string title = 2;
+  string description = 3;
+  string image_url = 4;
+  string author = 5;
+  string created_at = 6;
+  int32 like_count = 7;
+  bool is_liked_by_user = 8;
+}
+
+// Response za dobavljanje personalizovanih blogova
+message GetPersonalizedBlogsResponse {
+  repeated BlogMessage blogs = 1;
+}

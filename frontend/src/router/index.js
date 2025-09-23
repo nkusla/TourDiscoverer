@@ -6,6 +6,8 @@ import TourEditor from '../views/TourEditor.vue'
 import Login from '../views/Login.vue'
 import Profile from '../views/Profile.vue'
 import Users from '../views/Users.vue'
+import ShoppingCart from '../views/ShoppingCart.vue'
+import PurchasedTours from '../views/PurchasedTours.vue'
 import BlogList from '../views/BlogList.vue'
 import CreateBlog from '../views/CreateBlog.vue'
 import PositionSimulator from '../views/PositionSimulator.vue'
@@ -61,6 +63,18 @@ const routes = [
     meta: { requiresAuth: true, requiresAdmin: true }
   },
   {
+    path: '/cart',
+    name: 'ShoppingCart',
+    component: ShoppingCart,
+    meta: { requiresAuth: true, requiresTourist: true }
+  },
+  {
+    path: '/purchases',
+    name: 'PurchasedTours',
+    component: PurchasedTours,
+    meta: { requiresAuth: true, requiresTourist: true }
+  },
+  {
     path: '/blogs',
     name: 'BlogList',
     component: BlogList,
@@ -109,6 +123,12 @@ router.beforeEach((to, from, next) => {
 
   // Check if route requires guide or admin privileges
   if (to.meta.requiresGuideOrAdmin && !userStore.canCreateTours) {
+    next('/')
+    return
+  }
+
+  // Check if route requires tourist privileges
+  if (to.meta.requiresTourist && !userStore.isTourist) {
     next('/')
     return
   }
