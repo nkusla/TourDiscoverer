@@ -86,17 +86,21 @@ api.use('/api/auth', validateJWT, createProxyMiddleware({
   }
 }));
 
-// Protected stakeholder profile route (use RPC)
-api.get('/api/stakeholder/profile', validateJWT, async (req, res) => {
-  try {
-    const username = req.user && req.user.username;
-    const profile = await stakeholderRPCClient.getProfile(username);
-    res.json(profile || {});
-  } catch (err) {
-    console.error('Stakeholder RPC getProfile error:', err);
-    res.status(500).json({ error: 'Failed to fetch profile via RPC' });
+// Protected stakeholder profile route (proxy to stakeholder HTTP service)
+// Use HTTP proxy so frontend receives the full profile JSON (first_name, last_name, biography, motto, profile_picture)
+api.get('/api/stakeholder/profile', validateJWT, createProxyMiddleware({
+  target: STAKEHOLDER_SERVICE_URL,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api/stakeholder/profile': '/profile',
+  },
+  onProxyReq: (proxyReq, req, res) => {
+    // Ensure any headers set by validateJWT (like x-username/x-user-role) are forwarded
+    // (http-proxy-middleware forwards headers by default, but copy explicitly to be safe)
+    if (req.headers['x-username']) proxyReq.setHeader('x-username', req.headers['x-username']);
+    if (req.headers['x-user-role']) proxyReq.setHeader('x-user-role', req.headers['x-user-role']);
   }
-});
+}));
 
 api.put('/api/stakeholder/profile', validateJWT, createProxyMiddleware({
   target: STAKEHOLDER_SERVICE_URL,
