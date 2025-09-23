@@ -388,6 +388,11 @@ func (h *TourHandler) StartTourExecution(w http.ResponseWriter, r *http.Request)
 
 	execution, err := h.service.StartTourExecution(&request, username)
 	if err != nil {
+		// Handle specific error for unpurchased tours
+		if err.Error() == "tour must be purchased before execution" {
+			h.sendErrorResponse(w, "Tour must be purchased before execution", http.StatusPaymentRequired)
+			return
+		}
 		h.sendErrorResponse(w, "Failed to start tour execution: "+err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -527,9 +532,10 @@ func (h *TourHandler) GetExecutableToursForTourist(w http.ResponseWriter, r *htt
 		return
 	}
 
-	tours, err := h.service.GetExecutableToursForTourist()
+	// Get purchased tours for this tourist
+	tours, err := h.service.GetPurchasedToursForTourist(username)
 	if err != nil {
-		log.Printf("Error getting executable tours: %v", err)
+		log.Printf("Error getting purchased tours: %v", err)
 		h.sendErrorResponse(w, "Failed to get executable tours: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
